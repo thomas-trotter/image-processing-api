@@ -1,7 +1,16 @@
-import logging
-from typing import Dict, List, Optional, Annotated
-from pathlib import Path
+"""
+Image management coordination layer.
+
+This module provides the ImageManager class that orchestrates image storage,
+retrieval, and metadata operations by coordinating multiple service classes.
+
+For detailed documentation, see the module's README.md file.
+"""
+
+from typing import Dict, List, Optional, Annotated, Tuple
 from fastapi import UploadFile, Depends
+from pathlib import Path
+
 
 from app.utils.file_operations.directory_utils import DirectoryManager, get_directory_manager
 from app.services.image.storage.local_storage import LocalImageStorage, get_local_image_storage
@@ -9,7 +18,7 @@ from app.services.image.crud_operations import ImageCRUDService, get_image_crud_
 from app.services.image.metadata_handler import ImageMetadataExtractor, get_image_metadata_extractor
 from app.core.logging_config import get_logger
 
-# Initialize logger
+
 logger = get_logger("image_manager")
 
 DirectoryManagerDep = Annotated[DirectoryManager, Depends(get_directory_manager)]
@@ -18,6 +27,21 @@ ImageCRUDServiceDep = Annotated[ImageCRUDService, Depends(get_image_crud_service
 ImageMetadataExtractorDep = Annotated[ImageMetadataExtractor, Depends(get_image_metadata_extractor)]
 
 class ImageManager:
+    """
+    Manages image storage, retrieval, and metadata extraction.
+
+    Coordinates various services including LocalImageStorage, ImageCRUDService,
+    and ImageMetadataExtractor to provide a unified interface for image
+    management operations.
+
+    Args:
+        directory_manager (DirectoryManager): Manages directory paths and folder operations.
+        local_storage (LocalImageStorage): Handles file saving and storage.
+        image_CRUD (ImageCRUDService): Handles CRUD operations for images.
+        metadata_extractor (ImageMetadataExtractor): Extracts metadata from images.
+    """
+    
+    
     def __init__(
         self,
         directory_manager: DirectoryManagerDep,
@@ -28,10 +52,11 @@ class ImageManager:
         """
         Initializes the ImageManager with necessary services.
 
-        @param directory_manager: Manages directory paths and folder operations.
-        @param local_storage: Handles file saving and storage.
-        @param image_CRUD: Handles database CRUD operations for images.
-        @param metadata_extractor: Extracts metadata from images.
+        Args:
+            directory_manager (DirectoryManager): Manages directory paths and folder operations.
+            local_storage (LocalImageStorage): Handles file saving and storage.
+            image_CRUD (ImageCRUDService): Handles CRUD operations for images.
+            metadata_extractor (ImageMetadataExtractor): Extracts metadata from images.
         """
         self.directory_manager = directory_manager
         self.local_storage = local_storage
@@ -42,10 +67,14 @@ class ImageManager:
         """
         Saves an uploaded image file to local storage.
 
-        @param file: The uploaded image file.
-        @param filename: Optional custom filename.
-        @param format: Image format (default is JPEG).
-        @return: Path to the saved image file.
+        Args:
+            file (UploadFile): The uploaded image file.
+            filename (Optional[str]): Optional custom filename. If not provided,
+                a UUID-based filename is generated.
+            format (str): Image format to save as. Defaults to "JPEG".
+
+        Returns:
+            str: Path to the saved image file.
         """
         logger.info(f"Saving uploaded image: {filename or file.filename}")
         return self.local_storage.save(file=file, folder="uploaded", filename=filename, format=format)
@@ -54,20 +83,26 @@ class ImageManager:
         """
         Retrieves the full path of an image by its name.
 
-        @param image_name: Name of the image file.
-        @param folder: Folder where the image is stored.
-        @return: Path to the image file.
+        Args:
+            image_name (str): Name of the image file.
+            folder (str): Folder where the image is stored. Defaults to "uploaded".
+
+        Returns:
+            str: Path to the image file.
         """
         logger.debug(f"Getting image path for: {image_name} in folder: {folder}")
         image_path = self.image_CRUD.get_image_path(image_name, folder)
         return str(image_path)
 
-    def get_image_dimensions(self, image_path: Path) -> tuple[int, int]:
+    def get_image_dimensions(self, image_path: Path) -> Tuple[int, int]:
         """
         Retrieves the width and height of the image.
 
-        @param image_path: Path to the image file.
-        @return: Tuple containing width and height.
+        Args:
+            image_path (Path): Path to the image file.
+
+        Returns:
+            Tuple[int, int]: Tuple containing (width, height) in pixels.
         """
         logger.debug(f"Getting image dimensions for: {image_path}")
         return self.metadata_extractor.get_dimensions(image_path)
@@ -76,8 +111,12 @@ class ImageManager:
         """
         Retrieves metadata from an image file.
 
-        @param image_path: Path to the image file.
-        @return: Dictionary of extracted metadata.
+        Args:
+            image_path (Path): Path to the image file.
+
+        Returns:
+            Dict: Dictionary containing image metadata including filename,
+                format, mode, dimensions, size_bytes, and path.
         """
         logger.debug(f"Getting metadata for image: {image_path}")
         return self.metadata_extractor.get_metadata(image_path)
@@ -86,9 +125,12 @@ class ImageManager:
         """
         Retrieves image information by its ID.
 
-        @param image_id: Unique identifier for the image.
-        @param folder: Folder where the image is stored.
-        @return: Dictionary containing image data.
+        Args:
+            image_id (str): Unique identifier for the image (filename).
+            folder (str): Folder where the image is stored. Defaults to "uploaded".
+
+        Returns:
+            Dict: Dictionary containing complete image metadata.
         """
         logger.debug(f"Getting image by ID: {image_id}")
         return self.image_CRUD.get_image_by_id(image_id, folder)
@@ -97,11 +139,15 @@ class ImageManager:
         """
         Lists images in a folder with optional pagination and subdirectory filtering.
 
-        @param folder: Folder to search in.
-        @param limit: Max number of images to return.
-        @param offset: Number of images to skip.
-        @param subdirectory: Optional subfolder name.
-        @return: List of image metadata dictionaries.
+        Args:
+            folder (str): Folder to search in. Options: "uploaded", "edited",
+                "detected", or "all". Defaults to "uploaded".
+            limit (int): Maximum number of images to return. Defaults to 100.
+            offset (int): Number of images to skip for pagination. Defaults to 0.
+            subdirectory (Optional[str]): Optional subfolder name to search within.
+
+        Returns:
+            List[Dict]: List of image metadata dictionaries.
         """
         logger.debug(f"Listing images in folder: {folder}, subdirectory: {subdirectory}")
         return self.image_CRUD.list_images(folder, limit, offset, subdirectory)
@@ -110,9 +156,12 @@ class ImageManager:
         """
         Deletes a single image by ID.
 
-        @param image_id: Unique identifier for the image.
-        @param folder: Folder from which to delete the image.
-        @return: Dictionary confirming deletion.
+        Args:
+            image_id (str): Unique identifier for the image (filename).
+            folder (str): Folder from which to delete the image. Defaults to "uploaded".
+
+        Returns:
+            Dict: Dictionary containing status, message, and deleted image metadata.
         """
         logger.info(f"Deleting image with ID: {image_id} from folder: {folder}")
         return self.image_CRUD.delete_image(image_id, folder)
@@ -121,8 +170,12 @@ class ImageManager:
         """
         Deletes all images in a specified folder.
 
-        @param folder: Folder to delete all images from.
-        @return: Dictionary summarizing the deletion result.
+        Args:
+            folder (str): Folder to delete all images from. Options: "uploaded",
+                "edited", "detected", or "all".
+
+        Returns:
+            Dict: Dictionary containing status and message with deletion count.
         """
         logger.warning(f"Deleting all images in folder: {folder}")
         return self.image_CRUD.delete_all_images(folder)
@@ -131,10 +184,13 @@ class ImageManager:
         """
         Moves an image from one folder to another.
 
-        @param image_id: Unique identifier for the image.
-        @param source_folder: Folder to move the image from.
-        @param target_folder: Folder to move the image to.
-        @return: Dictionary confirming the move.
+        Args:
+            image_id (str): Unique identifier for the image (filename).
+            source_folder (str): Folder to move the image from.
+            target_folder (str): Folder to move the image to.
+
+        Returns:
+            Dict: Dictionary containing the metadata of the moved image.
         """
         logger.info(f"Moving image {image_id} from {source_folder} to {target_folder}")
         return self.image_CRUD.move_image(image_id, source_folder, target_folder)
@@ -147,13 +203,16 @@ def get_image_manager(
     metadata_extractor: ImageMetadataExtractorDep
 ) -> ImageManager:
     """
-    Dependency injector for ImageManager.
+    Injects an ImageManager instance with a DirectoryManager, LocalImageStorage, ImageCRUDService, and ImageMetadataExtractor dependency.
 
-    @param directory_manager: DirectoryManager dependency.
-    @param local_storage: LocalImageStorage dependency.
-    @param image_CRUD: ImageCRUDService dependency.
-    @param metadata_extractor: ImageMetadataExtractor dependency.
-    @return: Instance of ImageManager.
+    Args:
+        directory_manager (DirectoryManager): DirectoryManager dependency.
+        local_storage (LocalImageStorage): LocalImageStorage dependency.
+        image_CRUD (ImageCRUDService): ImageCRUDService dependency.
+        metadata_extractor (ImageMetadataExtractor): ImageMetadataExtractor dependency.
+
+    Returns:
+        ImageManager: Instance of ImageManager with all dependencies injected.
     """
     return ImageManager(
         directory_manager=directory_manager,
