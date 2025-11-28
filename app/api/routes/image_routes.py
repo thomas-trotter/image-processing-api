@@ -249,7 +249,7 @@ async def move_image(
     return service.move_image(image_name, move_params.source_folder, move_params.target_folder)
 
 
-@router.delete("/images/clear_all", response_model=StatusResponse)
+@router.delete("/clear_all", response_model=StatusResponse)
 @limiter.limit("2/hour")
 async def clear_images(
     request: Request,
