@@ -1,8 +1,7 @@
-
 from pydantic import BaseModel
 from typing import List
 
-# Define a model for a single detection box (bounding box) in an image
+
 class DetectionBox(BaseModel):
     """
     Represents a detection box, including the label, confidence score, and the coordinates of the bounding box.
@@ -16,7 +15,7 @@ class DetectionBox(BaseModel):
     confidence: float  
     box: list  
 
-# Define a response model for bounding box results, including the path to the image and detection details
+
 class BoundingBoxResponse(BaseModel):
     """
     Represents the response structure for bounding box detection.
@@ -30,7 +29,7 @@ class BoundingBoxResponse(BaseModel):
     image_path: str 
     detections: List[DetectionBox] 
 
-# Define a response model for detected objects, with a simpler response structure
+
 class DetectedObjectsResponse(BaseModel):
     """
     Represents the response structure for detected objects in an image.
