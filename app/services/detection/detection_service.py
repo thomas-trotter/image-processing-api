@@ -191,7 +191,7 @@ class ObjectDetectionService:
             image_path (str): The path to the image on which to perform object detection.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries representing detected objects,
+            List[Dict[str, Union[str, float, List[int]]]]: A list of dictionaries representing detected objects,
                 each containing:
                 - "label" (str): Object class name
                 - "confidence" (float): Detection confidence score (0.0 to 1.0)
