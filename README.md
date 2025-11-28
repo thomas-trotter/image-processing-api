@@ -114,8 +114,104 @@ Once the server is running, access the interactive API documentation at:
 
 ---
 
+## 🏗️ Architecture
+
+The Image Processing API follows a layered architecture pattern:
+
+```
+┌─────────────────────────────────────┐
+│         API Routes Layer            │  (FastAPI endpoints)
+├─────────────────────────────────────┤
+│         Managers Layer              │  (Business logic coordination)
+├─────────────────────────────────────┤
+│         Services Layer              │  (Core business logic)
+├─────────────────────────────────────┤
+│         Utils & Core                │  (Infrastructure)
+└─────────────────────────────────────┘
+```
+
+### Module Organization
+
+- **[Core Module](app/core/README.md)**: Configuration, dependencies, logging, rate limiting
+- **[API Module](app/api/README.md)**: Route handlers and endpoint definitions
+- **[Managers Module](app/managers/README.md)**: Business logic coordination layer
+- **[Services Module](app/services/README.md)**: Core business logic implementation
+- **[Schemas Module](app/schemas/README.md)**: Request/response validation models
+- **[Utils Module](app/utils/README.md)**: Utility functions and helpers
+
+For detailed information about each module, see their respective README files.
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+```
+http://localhost:8000
+```
+
+### Interactive Documentation
+Access the interactive Swagger UI at: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Endpoints Overview
+
+#### Image Management (`/images`)
+
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| POST | `/images/upload` | Upload a new image | 10/min |
+| GET | `/images/` | List images with pagination | 60/min |
+| GET | `/images/{image_name}/detail` | Get image metadata | 30/min |
+| GET | `/images/{image_name}/metadata/dimensions` | Get image dimensions | 20/min |
+| DELETE | `/images/{image_name}/delete` | Delete an image | 10/min |
+| POST | `/images/{image_name}/move` | Move image between folders | 20/min |
+| DELETE | `/images/clear_all` | Delete all images in folder | 2/hour |
+
+#### Image Editing (`/images/edit`)
+
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| POST | `/images/edit/resize` | Resize image | 10/min |
+| POST | `/images/edit/grayscale` | Convert to grayscale | 20/min |
+| POST | `/images/edit/rotate` | Rotate image | 15/min |
+| POST | `/images/edit/blur` | Apply blur filter | 10/min |
+| POST | `/images/edit/sharpen` | Sharpen image | 10/min |
+| POST | `/images/edit/brightness` | Adjust brightness | 20/min |
+| POST | `/images/edit/contrast` | Adjust contrast | 20/min |
+
+#### Object Detection (`/images/detect`)
+
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| POST | `/images/detect/bounding_boxes/` | Detect objects with visualization | 5/min |
+| GET | `/images/detect/detected_objects/` | Get detection metadata | 10/min |
+
+### Example Requests
+
+#### Upload an Image
+```bash
+curl -X POST "http://localhost:8000/images/upload" \
+  -F "file=@photo.jpg" \
+  -F "filename=my_photo" \
+  -F "format=JPEG"
+```
+
+#### Resize an Image
+```bash
+curl -X POST "http://localhost:8000/images/edit/resize?image_name=photo.jpg&width=800&height=600"
+```
+
+#### Detect Objects
+```bash
+curl -X POST "http://localhost:8000/images/detect/bounding_boxes/?image_name=photo.jpg"
+```
+
+For complete API documentation with request/response schemas, visit the [interactive docs](http://localhost:8000/docs).
+
+---
+
 ## 📂 **Repository Structure**
-Here’s a quick overview of the project file structure:
+Here's a quick overview of the project file structure:
 ```graphql
 image-processing-api/
 │
@@ -189,7 +285,7 @@ image-processing-api/
 └── requirements.txt             
 ```
 
-## 🛠️ Improvements
+## 🛠️ Future Improvements
 
 Stay tuned for these upcoming features:
 
@@ -207,6 +303,21 @@ Stay tuned for these upcoming features:
 
 - 📄 **Pagination Support**:  
   Efficiently handle large image collections by paginating through the results.
+
+---
+
+## 📖 Module Documentation
+
+For detailed documentation on specific modules:
+
+- [Core Module](app/core/README.md) - Configuration and infrastructure
+- [API Routes](app/api/README.md) - Endpoint definitions
+- [Managers](app/managers/README.md) - Business logic coordination
+- [Services](app/services/README.md) - Core business logic
+  - [Image Services](app/services/image/README.md) - Image processing services
+  - [Detection Services](app/services/detection/README.md) - Object detection services
+- [Schemas](app/schemas/README.md) - Request/response models
+- [Utils](app/utils/README.md) - Utility functions
 
 ---
 

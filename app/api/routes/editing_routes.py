@@ -1,20 +1,28 @@
+"""
+Image editing API routes.
+
+This module defines all endpoints for image transformation and editing
+operations including resize, rotate, filters, and adjustments.
+
+For detailed documentation, see the module's README.md file.
+"""
+
 from fastapi import APIRouter, Depends, Query, Request
 from typing import Annotated
+
 from app.managers.edit_manager import EditManager, get_edit_manager
 from app.schemas.editing.editing_requests import RotateEditRequest, SharpenEditRequest
 from app.schemas.editing.editing_responses import EditResponse
 from app.core.rate_limiting import limiter
 from app.core.logging_config import get_logger
 
-# Initialize logger
 logger = get_logger("editing_routes")
 
 router = APIRouter(prefix="/images/edit", tags=["Image Editing"])
 
-# Dependency for EditManager
 EditManagerDep = Annotated[EditManager, Depends(get_edit_manager)]
 
-# Route to resize the image
+
 @router.post("/resize", response_model=EditResponse)
 @limiter.limit("10/minute")
 def resize_image(
@@ -27,19 +35,26 @@ def resize_image(
     """
     Resize the image to the specified width and height.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to be resized.
-        - **width**: The target width for resizing (must be greater than 0).
-        - **height**: The target height for resizing (must be greater than 0).
+    This endpoint resizes an image to the exact dimensions specified. The
+    resized image is saved to the edited folder with a "_resized" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the resized image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to resize (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **width** (int): The target width in pixels. Must be greater than 0.
+    - **height** (int): The target height in pixels. Must be greater than 0.
 
+    **Returns:**
+    - **EditResponse**: Contains the path to the resized image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If resizing fails.
     """
     path = service.process_image_edit(image_name, service.apply_resize, image_name, width, height)
     return EditResponse(path=path)
 
-# Route to convert image to grayscale
+
 @router.post("/grayscale", response_model=EditResponse)
 @limiter.limit("20/minute")
 def convert_to_grayscale(
@@ -48,18 +63,26 @@ def convert_to_grayscale(
     service: EditManagerDep,
 ):
     """
-    Convert the image to grayscale.
+    Converts the image to grayscale.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to be converted.
+    This endpoint converts a color image to grayscale. The converted image
+    is saved to the edited folder with a "_gray" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the grayscale image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to convert (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the grayscale image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If conversion fails.
     """
     path = service.process_image_edit(image_name, service.apply_grayscale, image_name)
     return EditResponse(path=path)
 
-# Route to rotate image
+
 @router.post("/rotate", response_model=EditResponse)
 @limiter.limit("15/minute")
 def rotate_image(
@@ -69,19 +92,30 @@ def rotate_image(
     service: EditManagerDep,
 ):
     """
-    Rotate the image by the specified degrees and expansion settings.
+    Rotates the image by the specified degrees and expansion settings.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to be rotated.
-        - **rotate_params**: The parameters for rotating the image (degrees and expansion).
+    This endpoint rotates an image by the specified angle. The rotated image
+    is saved to the edited folder with a "_rotated_{degrees}" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the rotated image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to rotate (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **rotate_params** (RotateEditRequest): Request body containing:
+        - **degrees** (int): The rotation angle in degrees (can be negative).
+        - **expand** (bool, optional): Whether to expand the canvas to fit the
+            rotated image. If False, the image may be cropped. Defaults to False.
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the rotated image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If rotation fails.
     """
     path = service.process_image_edit(image_name, service.apply_rotation, image_name, rotate_params.degrees, rotate_params.expand)
     return EditResponse(path=path)
 
-# Route to apply blur to image
+
 @router.post("/blur", response_model=EditResponse)
 @limiter.limit("10/minute")
 def blur_image(
@@ -93,17 +127,25 @@ def blur_image(
     """
     Apply a blur effect to the image with a specified radius.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to be blurred.
-        - **radius**: The radius of the blur effect (must be greater than 0).
+    This endpoint applies a Gaussian blur filter to the image. The blurred image
+    is saved to the edited folder with a "_blurred_{radius}" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the blurred image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to blur (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **radius** (float, optional): The radius of the blur effect in pixels.
+        Must be greater than 0. Larger values create more blur. Defaults to 2.0.
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the blurred image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If blurring fails.
     """
     path = service.process_image_edit(image_name, service.apply_blur, image_name, radius)
     return EditResponse(path=path)
 
-# Route to sharpen image
 @router.post("/sharpen", response_model=EditResponse)
 @limiter.limit("10/minute")
 def sharpen_image(
@@ -113,19 +155,33 @@ def sharpen_image(
     service: EditManagerDep,
 ):
     """
-    Sharpen the image with the specified parameters (factor, radius, threshold).
+    Sharpen the image with the specified parameters.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to be sharpened.
-        - **sharpen_params**: The sharpening parameters (factor, radius, threshold).
+    This endpoint applies an unsharp mask filter to enhance image sharpness.
+    The sharpened image is saved to the edited folder with a "_sharpened" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the sharpened image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to sharpen (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **sharpen_params** (SharpenEditRequest): Request body containing:
+        - **factor** (float, optional): The intensity of the sharpening effect.
+            Higher values create more sharpening. Defaults to 2.0.
+        - **radius** (float, optional): The radius of the sharpening effect in pixels.
+            Defaults to 2.0.
+        - **threshold** (int, optional): The threshold for sharpening. Only pixels
+            with differences above this threshold are sharpened. Defaults to 3.
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the sharpened image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If sharpening fails.
     """
     path = service.process_image_edit(image_name, service.apply_sharpen, image_name, sharpen_params.factor, sharpen_params.radius, sharpen_params.threshold)
     return EditResponse(path=path)
 
-# Route to adjust brightness of image
+
 @router.post("/brightness", response_model=EditResponse)
 @limiter.limit("20/minute")
 def adjust_brightness(
@@ -135,19 +191,29 @@ def adjust_brightness(
     factor: float = Query(..., gt=0, description="The factor by which to adjust brightness (must be greater than 0)."),
 ):
     """
-    Adjust the brightness of the image by a specified factor.
+    Adjusts the brightness of the image by a specified factor.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to adjust brightness.
-        - **factor**: The factor by which to adjust brightness (must be greater than 0).
+    This endpoint adjusts the brightness of an image. The adjusted image is
+    saved to the edited folder with a "_brightness_{factor}" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the brightness-adjusted image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to adjust (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **factor** (float): The brightness adjustment factor. Must be greater than 0.
+        - 1.0 = no change
+        - < 1.0 = darker
+        - > 1.0 = brighter
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the brightness-adjusted image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If brightness adjustment fails.
     """
     path = service.process_image_edit(image_name, service.apply_brightness, image_name, factor)
     return EditResponse(path=path)
 
-# Route to adjust contrast of image
 @router.post("/contrast", response_model=EditResponse)
 @limiter.limit("20/minute")
 def adjust_contrast(
@@ -157,14 +223,25 @@ def adjust_contrast(
     factor: float = Query(..., gt=0, description="The factor by which to adjust contrast (must be greater than 0)."),
 ):
     """
-    Adjust the contrast of the image by a specified factor.
+    Adjusts the contrast of the image by a specified factor.
 
-    - **Parameters**:
-        - **image_name**: The name of the image to adjust contrast.
-        - **factor**: The factor by which to adjust contrast (must be greater than 0).
+    This endpoint adjusts the contrast of an image. The adjusted image is
+    saved to the edited folder with a "_contrast_{factor}" suffix.
 
-    - **Returns**: 
-        - An **EditResponse** containing the path to the contrast-adjusted image.
+    **Parameters:**
+    - **image_name** (str): The name of the image file to adjust (e.g., "photo.jpg").
+        The image must exist in the "uploaded" folder.
+    - **factor** (float): The contrast adjustment factor. Must be greater than 0.
+        - 1.0 = no change
+        - < 1.0 = lower contrast
+        - > 1.0 = higher contrast
+
+    **Returns:**
+    - **EditResponse**: Contains the path to the contrast-adjusted image file.
+
+    **Raises:**
+    - **HTTPException 404**: If the image is not found.
+    - **HTTPException 500**: If contrast adjustment fails.
     """
     path = service.process_image_edit(image_name, service.apply_contrast, image_name, factor)
     return EditResponse(path=path)

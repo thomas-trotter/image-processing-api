@@ -1,3 +1,12 @@
+"""
+Directory management utilities.
+
+This module provides the DirectoryManager class for managing and validating
+directory paths used throughout the application.
+
+For detailed documentation, see the module's README.md file.
+"""
+
 from typing import Dict
 from pathlib import Path
 from fastapi import HTTPException, status, Depends
@@ -9,15 +18,25 @@ logger = get_logger("directory_utils")
 
 class DirectoryManager:
     """
-    DirectoryManager is responsible for managing and validating directories.
-    It can create required directories and validate folder paths.
+    Directory manager for managing and validating directories.
+
+    Responsible for managing and validating directories. Can create required
+    directories and validate folder paths.
+
+    Args:
+        directories (Dict[str, Path]): A dictionary mapping folder names to
+            directory paths (e.g., {"uploaded": Path("/path/to/uploads")}).
     """
 
     def __init__(self, directories: Dict[str, Path]):
         """
         Initializes the DirectoryManager with the provided directories.
-        
-        @param directories: A dictionary mapping folder names to directory paths (e.g., {"uploads": Path("/path/to/uploads")})
+
+        Automatically creates all directories if they don't exist.
+
+        Args:
+            directories (Dict[str, Path]): A dictionary mapping folder names to
+                directory paths (e.g., {"uploaded": Path("/path/to/uploads")}).
         """
         self.directories = directories
         logger.info("Initializing DirectoryManager with directories: %s", self.directories)
@@ -26,7 +45,10 @@ class DirectoryManager:
 
     def _create_directories(self) -> None:
         """
-        Creates directories defined in the `directories` attribute if they don't already exist.
+        Creates directories defined in the `directories` attribute if they don't exist.
+
+        Raises:
+            HTTPException: If directory creation fails.
         """
         for directory in self.directories.values():
             try:
@@ -42,10 +64,12 @@ class DirectoryManager:
     def validate_folder(self, folder: str) -> bool:
         """
         Validates if a folder name exists in the `directories` attribute.
-        
-        @param folder: The folder name to validate.
-        
-        Returns True if the folder exists in `directories`, False otherwise.
+
+        Args:
+            folder (str): The folder name to validate.
+
+        Returns:
+            bool: True if the folder exists in `directories`, False otherwise.
         """
         is_valid = folder in self.directories
         logger.debug(f"Validating folder '{folder}': {'Valid' if is_valid else 'Invalid'}")
@@ -54,10 +78,15 @@ class DirectoryManager:
     def get_directory(self, folder: str) -> Path:
         """
         Retrieves the directory path for a specified folder.
-        
-        @param folder: The folder name whose directory path needs to be retrieved.
-        
-        Returns the Path of the folder if valid, otherwise raises an HTTPException.
+
+        Args:
+            folder (str): The folder name whose directory path needs to be retrieved.
+
+        Returns:
+            Path: The Path of the folder if valid.
+
+        Raises:
+            HTTPException: If the folder name is invalid.
         """
         if not self.validate_folder(folder):
             logger.warning(f"Invalid folder requested: {folder}")
@@ -71,11 +100,14 @@ class DirectoryManager:
 
 def get_directory_manager(directories: Dict[str, Path] = Depends(get_directories)) -> DirectoryManager:
     """
-    Dependency injection function to get an instance of DirectoryManager.
-    
-    @param directories: A dictionary of directories provided by the dependency system.
-    
-    Returns an instance of DirectoryManager.
+    Creates an instance of DirectoryManager.
+
+    Args:
+        directories (Dict[str, Path]): A dictionary of directories provided by
+            the dependency system.
+
+    Returns:
+        DirectoryManager: An instance of DirectoryManager.
     """
     logger.debug("Creating DirectoryManager instance with directories: %s", directories)
     return DirectoryManager(directories=directories)
