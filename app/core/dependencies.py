@@ -1,3 +1,11 @@
+"""
+Dependency injection functions for core application dependencies.
+
+This module provides FastAPI dependency functions for commonly used
+configuration and utility objects throughout the application.
+
+For detailed documentation, see the module's README.md file.
+"""
 
 from typing import Dict
 from pathlib import Path
@@ -10,12 +18,17 @@ logger = get_logger("dependencies")
 
 def get_directories() -> Dict[str, Path]:
     """
-    Retrieve the configured storage directories.
+    Retrieves the configured storage directories.
 
-    @return: A dict mapping directory keys to their Path objects:
-        - "uploaded": folder for uploaded images
-        - "edited": folder for edited images
-        - "detected": folder for detection output
+    Returns a dictionary mapping directory keys to their Path objects.
+    This is used as a FastAPI dependency to provide directory paths
+    to route handlers and services.
+
+    Returns:
+        Dict[str, Path]: Mapping directory keys to their Path objects:
+            - "uploaded": folder for uploaded images
+            - "edited": folder for edited images
+            - "detected": folder for detection output
     """
     dirs = {
         "uploaded": settings.UPLOADED_FOLDER,
@@ -27,10 +40,16 @@ def get_directories() -> Dict[str, Path]:
 
 def get_format_extensions() -> Dict[str, str]:
     """
-    Retrieve the mapping from image format names to file extensions.
+    Retrieves the mapping from image format names to file extensions.
 
-    @return: A dict mapping format strings (e.g., "JPEG", "PNG") to their
-             corresponding file extension (e.g., ".jpg", ".png").
+    Returns a dictionary that maps image format strings to their
+    corresponding file extensions. Used for format validation and
+    file naming operations.
+
+    Returns:
+        Dict[str, str]: Mapping format strings (e.g., "JPEG", "PNG") to their
+            corresponding file extension (e.g., ".jpg", ".png").
+            Supported formats: JPEG, JPG, PNG, GIF, BMP, TIFF, WEBP.
     """
     fmt_ext = {
         "JPEG": ".jpg",
