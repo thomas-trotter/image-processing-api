@@ -12,7 +12,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.core.logging_config import get_logger
 
-# Initialize logger for this module
+
 logger = get_logger("dependencies")
 
 
