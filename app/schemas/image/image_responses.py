@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-# Model to represent a simple status response
+
 class StatusResponse(BaseModel):
     """
     Represents a status response with a status message.
@@ -10,7 +10,7 @@ class StatusResponse(BaseModel):
     """
     status: str 
 
-# Model to represent image metadata details
+
 class ImageMetadata(BaseModel):
     """
     Represents the metadata of an image, such as its format, mode, and dimensions.
@@ -26,7 +26,7 @@ class ImageMetadata(BaseModel):
     width: int   
     height: int  
 
-# Model to represent the response when an image is processed, including status, path, and metadata
+
 class ImageResponse(BaseModel):
     """
     Represents the response for an image operation that includes status, path, and metadata.
@@ -40,7 +40,7 @@ class ImageResponse(BaseModel):
     path: str     
     metadata: ImageMetadata  
 
-# Model to represent a basic image item in a list, with essential attributes
+
 class ImageListItem(BaseModel):
     """
     Represents a basic image item with essential attributes to be displayed in a list.
@@ -66,7 +66,7 @@ class ImageListItem(BaseModel):
     url: None      
     folder: str   
 
-# Model to represent detailed information about a specific image
+
 class ImageDetailResponse(BaseModel):
     """
     Represents a detailed response for an image, including its metadata and other details.
@@ -87,7 +87,7 @@ class ImageDetailResponse(BaseModel):
     path: str        
     url: None        
 
-# Model to represent the dimensions (width and height) of an image
+
 class ImageDimensionsResponse(BaseModel):
     """
     Represents the dimensions (width and height) of an image.
