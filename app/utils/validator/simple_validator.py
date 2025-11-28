@@ -99,7 +99,7 @@ class SimpleImageValidator(BaseImageValidator):
         Raises:
             HTTPException: If the file size exceeds the maximum allowed size.
         """
-        if image.file.__sizeof__() > self.max_size:
+        if image.file.size > self.max_size:
             logger.warning("File size too large: %d bytes, max allowed: %d bytes", image.file.__sizeof__(), self.max_size)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
