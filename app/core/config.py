@@ -15,24 +15,23 @@ from pathlib import Path
 import logging
 import os
 
-# Initialize logger
 LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)  # Ensure the 'logs' folder exists
+os.makedirs(LOG_DIR, exist_ok=True)
 
-log_file_path = os.path.join(LOG_DIR, "app.log")  # Define the log file path in the 'logs' folder
+log_file_path = os.path.join(LOG_DIR, "app.log")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Set up the file handler to write logs to the 'logs/app.log'
+
 file_handler = logging.FileHandler(log_file_path) 
 file_handler.setLevel(logging.DEBUG)
 
-# Formatter for the logs
+
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s - [%(filename)s:%(lineno)d]")
 file_handler.setFormatter(formatter)
 
-# Add the file handler to the logger
+
 logger.addHandler(file_handler)
 
 class Settings(BaseSettings):
@@ -91,7 +90,6 @@ class Settings(BaseSettings):
             else:
                 logger.debug(f"Directory already exists: {path}")
 
-# Initialize settings
 settings = Settings()
 settings.setup()
 
