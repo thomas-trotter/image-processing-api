@@ -8,10 +8,10 @@ For detailed documentation, see the module's README.md file.
 """
 
 from transformers import DetrImageProcessor, DetrForObjectDetection
+from typing import List, Dict, Tuple, Annotated, Union
 from PIL import Image, ImageDraw, ImageFont
 from tempfile import SpooledTemporaryFile 
 from fastapi import Depends, UploadFile
-from typing import Annotated
 from random import randint
 from io import BytesIO 
 
@@ -20,7 +20,7 @@ import torch
 import os 
 
 
-from app.services.image.storage.local_storage import LocalImageStorage, get_local_image_storage  # Local storage service
+from app.services.image.storage.local_storage import LocalImageStorage, get_local_image_storage
 from app.core.logging_config import get_logger
 
 
@@ -65,20 +65,20 @@ class ObjectDetectionService:
             logger.warning("Arial font not found, using default font.")
             return ImageFont.load_default()
 
-    def _get_random_colour(self) -> tuple[str, tuple[int, int, int]]:
+    def _get_random_colour(self) -> Tuple[str, Tuple[int, int, int]]:
         """
         Generates a random color in both hex and RGB formats.
 
         Returns:
-            tuple[str, tuple[int, int, int]]: A tuple containing:
+            Tuple[str, Tuple[int, int, int]]: A tuple containing:
                 - hex color code (str): Hex string like "#ff0000"
-                - RGB tuple (tuple[int, int, int]): RGB values (r, g, b)
+                - RGB tuple (Tuple[int, int, int]): RGB values (r, g, b)
         """
         r, g, b = randint(0, 255), randint(0, 255), randint(0, 255)
         hex_color = f"#{r:02x}{g:02x}{b:02x}"
         return hex_color, (r, g, b)
 
-    def _get_text_colour(self, rgb: tuple[int, int, int]) -> str:
+    def _get_text_colour(self, rgb: Tuple[int, int, int]) -> str:
         """
         Determines an appropriate text color based on background brightness.
 
@@ -86,7 +86,7 @@ class ObjectDetectionService:
         readability against the background color.
 
         Args:
-            rgb (tuple[int, int, int]): The RGB color of the background.
+            rgb (Tuple[int, int, int]): The RGB color of the background.
 
         Returns:
             str: A hex string representing either "#000000" (black) or
@@ -180,7 +180,7 @@ class ObjectDetectionService:
         logger.info(f"Bounding boxes saved to: {output_path}")
         return output_path 
 
-    def get_detected_objects(self, image_path: str) -> list:
+    def get_detected_objects(self, image_path: str) -> List[Dict[str, Union[str, float, List[int]]]]:
         """
         Detects objects in an image and return detection metadata.
 
@@ -191,11 +191,11 @@ class ObjectDetectionService:
             image_path (str): The path to the image on which to perform object detection.
 
         Returns:
-            list[dict]: A list of dictionaries representing detected objects,
+            List[Dict[str, Any]]: A list of dictionaries representing detected objects,
                 each containing:
                 - "label" (str): Object class name
                 - "confidence" (float): Detection confidence score (0.0 to 1.0)
-                - "box" (list): Bounding box coordinates [x1, y1, x2, y2]
+                - "box" (List[int]): Bounding box coordinates [x1, y1, x2, y2]
         """
         image = Image.open(image_path)
 
