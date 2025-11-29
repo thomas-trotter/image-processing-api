@@ -61,7 +61,13 @@ Handles object detection operations:
 
 ### Standard Route Structure
 
+All route handlers are **async functions** that wrap synchronous operations to prevent blocking:
+
 ```python
+from fastapi import APIRouter, Depends, Request, Query
+from app.core.rate_limiting import limiter
+import asyncio
+
 @router.post("/endpoint", response_model=ResponseModel)
 @limiter.limit("10/minute")
 async def endpoint_handler(
@@ -78,17 +84,31 @@ async def endpoint_handler(
     Returns:
         ResponseModel: Response description
     """
-    # Handler logic
-    return result
+    # Wrap sync manager/service calls in asyncio.to_thread()
+    # This prevents blocking the event loop during I/O or CPU-intensive operations
+    result = await asyncio.to_thread(manager.sync_operation, param)
+    return ResponseModel(data=result)
 ```
+
+### Async/Sync Pattern
+
+The codebase follows a consistent pattern for handling async/sync operations:
+
+1. **Route handlers are async**: All endpoints use `async def` for non-blocking request handling
+2. **Sync operations are wrapped**: Synchronous manager/service methods are wrapped in `asyncio.to_thread()`
+3. **Benefits**: 
+   - Multiple requests can be processed concurrently
+   - File I/O and CPU-intensive tasks don't block the event loop
+   - Better resource utilization and scalability
 
 ### Error Handling
 
-Routes use FastAPI's exception handling:
+Routes use FastAPI's exception handling with async operations:
 
 ```python
 try:
-    result = manager.operation()
+    # Async operation with sync wrapper
+    result = await asyncio.to_thread(manager.operation, param)
 except HTTPException:
     raise  # Re-raise HTTP exceptions
 except Exception as e:
