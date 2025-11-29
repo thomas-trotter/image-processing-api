@@ -7,7 +7,7 @@ operations on images including listing, retrieval, deletion, and movement.
 For detailed documentation, see the module's README.md file.
 """
 
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, List, Optional, Annotated, Any, Union
 from fastapi import HTTPException, Depends
 from pathlib import Path
 import shutil
@@ -78,7 +78,7 @@ class ImageCRUDService:
             "all": list(self.directories.values())
         }
 
-    def delete_image(self, image_id: str, folder: str) -> Dict:
+    def delete_image(self, image_id: str, folder: str) -> Dict[str, Union[str, Dict[str, Any]]]:
         """
         Deletes an image and its metadata from the specified folder.
 
@@ -87,7 +87,10 @@ class ImageCRUDService:
             folder (str): The folder where the image is located.
 
         Returns:
-            Dict: A dictionary with status, message, and deleted image metadata.
+            Dict[str, Union[str, Dict[str, Any]]]: A dictionary with status, message, and deleted image metadata.
+                - "status" (str): The status of the operation.
+                - "message" (str): The message of the operation.
+                - "deleted_image" (Dict[str, Any]): The metadata of the deleted image.
 
         Raises:
             HTTPException: If the image is not found or deletion fails.
@@ -118,7 +121,7 @@ class ImageCRUDService:
             logger.error(f"Error deleting image: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to delete image: {e}")
 
-    def delete_all_images(self, folder: str) -> Dict:
+    def delete_all_images(self, folder: str) -> Dict[str, str]:
         """
         Deletes all images from a specified folder.
 
@@ -127,8 +130,9 @@ class ImageCRUDService:
                 "edited", "detected", or "all".
 
         Returns:
-            Dict: A dictionary with status and message including deletion count.
-
+            Dict[str, str]: A dictionary with status and message including deletion count.
+                - "status" (str): The status of the operation.
+                - "message" (str): The message of the operation.
         Raises:
             HTTPException: If the folder name is invalid.
         """
@@ -170,7 +174,7 @@ class ImageCRUDService:
             "message": f"Deleted {deleted_count} images from {folder}"
         }
 
-    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict:
+    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict[str, Any]:
         """
         Moves an image from one folder to another.
 
@@ -182,7 +186,7 @@ class ImageCRUDService:
             target_folder (str): The folder to move the image to.
 
         Returns:
-            Dict: A dictionary with the metadata of the moved image.
+            Dict[str, Any]: A dictionary with the metadata of the moved image.
 
         Raises:
             HTTPException: If source/target are the same, image not found,
@@ -242,7 +246,7 @@ class ImageCRUDService:
 
         return image_path
 
-    def get_image_by_id(self, image_id: str, folder: str) -> Dict:
+    def get_image_by_id(self, image_id: str, folder: str) -> Dict[str, Any]:
         """
         Gets the metadata of an image by its ID in a specific folder.
 
@@ -251,7 +255,7 @@ class ImageCRUDService:
             folder (str): The folder where the image is located.
 
         Returns:
-            Dict: A dictionary with the image's complete metadata.
+            Dict[str, Any]: A dictionary with the image's complete metadata.
 
         Raises:
             HTTPException: If the image is not found.
@@ -265,7 +269,7 @@ class ImageCRUDService:
         limit: int = 100,
         offset: int = 0,
         subdirectory: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> List[ImageListItem]:
         """
         Lists images from a specific folder with pagination.
 
@@ -277,7 +281,7 @@ class ImageCRUDService:
             subdirectory (Optional[str]): Optional subdirectory to search within.
 
         Returns:
-            List[Dict]: A list of ImageListItem objects containing image metadata.
+            List[ImageListItem]: A list of ImageListItem objects containing image metadata.
 
         Raises:
             HTTPException: If the folder name is invalid.
