@@ -7,9 +7,10 @@ including type, size, and format checks.
 For detailed documentation, see the module's README.md file.
 """
 
-from typing import Dict
+from typing import Dict, Tuple
 from fastapi import HTTPException, UploadFile, status, Depends
 import logging
+import io
 
 from app.utils.validator.base_validator import BaseImageValidator
 from app.core.dependencies import get_format_extensions
@@ -33,7 +34,12 @@ class SimpleImageValidator(BaseImageValidator):
             ("image/jpeg", "image/png").
     """
 
-    def __init__(self, format_extensions: Dict[str, str], max_size_mb=5, allowed_types=("image/jpeg", "image/png")):
+    def __init__(
+        self, 
+        format_extensions: Dict[str, str], 
+        max_size_mb: int = 5, 
+        allowed_types: Tuple[str, ...] = ("image/jpeg", "image/png")
+    ):
         """
         Initializes the SimpleImageValidator with configuration.
 
@@ -41,7 +47,7 @@ class SimpleImageValidator(BaseImageValidator):
             format_extensions (Dict[str, str]): A dictionary mapping image formats
                 to their file extensions.
             max_size_mb (int): The maximum allowed file size in MB. Defaults to 5.
-            allowed_types (tuple): A tuple of allowed MIME types. Defaults to
+            allowed_types (Tuple[str, ...]): A tuple of allowed MIME types. Defaults to
                 JPEG and PNG.
         """
         self.format_extensions = format_extensions
@@ -99,13 +105,18 @@ class SimpleImageValidator(BaseImageValidator):
         Raises:
             HTTPException: If the file size exceeds the maximum allowed size.
         """
-        if image.file.size > self.max_size:
-            logger.warning("File size too large: %d bytes, max allowed: %d bytes", image.file.__sizeof__(), self.max_size)
+        current_position = image.file.tell()
+        image.file.seek(0, io.SEEK_END)
+        file_size = image.file.tell()
+        image.file.seek(current_position)
+        
+        if file_size > self.max_size:
+            logger.warning("File size too large: %d bytes, max allowed: %d bytes", file_size, self.max_size)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="File too large. Max size is {} MB.".format(self.max_size // (1024 * 1024))
             )
-        logger.info("Validated image size: %d bytes", image.file.__sizeof__())
+        logger.info("Validated image size: %d bytes", file_size)
 
     def validate_format(self, format: str) -> str:
         """

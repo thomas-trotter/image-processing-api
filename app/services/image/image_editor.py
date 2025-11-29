@@ -9,7 +9,7 @@ For detailed documentation, see the module's README.md file.
 
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 from pathlib import Path
-from typing import Annotated, Dict
+from typing import Annotated, Dict, Callable, Any, Optional
 from fastapi import Depends
 
 import os
@@ -49,7 +49,7 @@ class ImageEditService:
         self.image_crud = image_crud
         self.directories = directories
 
-    def _get_output_path(self, image_path: str, suffix: str | None = None) -> str:
+    def _get_output_path(self, image_path: str, suffix: Optional[str] = None) -> str:
         """
         Generates the output file path for a processed image.
 
@@ -72,7 +72,13 @@ class ImageEditService:
 
         return str(output_path)
 
-    def _process_image(self, image_name: str, operation, suffix: str | None = None, **kwargs) -> str:
+    def _process_image(
+        self, 
+        image_name: str, 
+        operation: Callable[[Image.Image, ...], Image.Image], 
+        suffix: Optional[str] = None, 
+        **kwargs: Any
+    ) -> str:
         """
         Applies an image processing operation and saves the result.
 
@@ -81,9 +87,10 @@ class ImageEditService:
 
         Args:
             image_name (str): The name of the image to be processed.
-            operation (callable): The operation function to be performed on the image.
-                Should accept an Image object and **kwargs, returning a processed Image.
-            suffix (str, optional): A suffix to indicate the type of operation performed
+            operation (Callable[[Image.Image, ...], Image.Image]): The operation function 
+                to be performed on the image. Should accept an Image object and **kwargs, 
+                returning a processed Image.
+            suffix (Optional[str]): A suffix to indicate the type of operation performed
                 (e.g., "resized", "gray"). Defaults to None.
             **kwargs: Additional arguments required for the operation.
 

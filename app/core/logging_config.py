@@ -9,6 +9,7 @@ For detailed documentation, see the module's README.md file.
 """
 
 from app.core.config import settings
+from typing import Optional
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -39,7 +40,7 @@ if settings.DEBUG:
 if not logger.hasHandlers():
     logger.addHandler(file_handler)
 
-def get_logger(name: str = None) -> logging.Logger:
+def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Retrieves a logger instance, either the main app logger or a child logger.
 

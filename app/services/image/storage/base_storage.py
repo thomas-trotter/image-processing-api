@@ -7,12 +7,6 @@ class BaseImageStorage(ABC):
     Abstract Base Class for image storage operations.
     This class defines the required methods for saving, retrieving, and deleting images.
     Subclasses should implement these methods with their specific storage logic.
-    
-    Args:
-        file (UploadFile): The image file to be saved.
-        folder (Optional[str]): The optional folder where the image should be stored (default is None).
-        filename (Optional[str]): The optional filename to save the image as (default is None).
-        format (Optional[str]): The format of the image (e.g., "JPEG", "PNG") to save the image as (default is "JPEG").
     """
     
     @abstractmethod
@@ -27,7 +21,7 @@ class BaseImageStorage(ABC):
             format (Optional[str]): The format of the image (e.g., "JPEG", "PNG") to save the image as (default is "JPEG").
         
         Returns:
-            The storage path or URL of the saved image.
+            str: The storage path or URL of the saved image.
         """
         pass
     
@@ -40,19 +34,20 @@ class BaseImageStorage(ABC):
             filename (str): The name of the image file.
         
         Returns:
-            The URL or path to the stored image.
+            str: The URL or path to the stored image.
         """
         pass
     
     @abstractmethod
-    def delete(self, filename: str) -> bool:
+    def delete(self, directory: str, filename: str) -> bool:
         """
         Delete the image and return success status.
         
         Args:
+            directory (str): The folder where the image is located.
             filename (str): The name of the image file to be deleted.
         
         Returns:
-            True if deletion is successful, False otherwise.
+            bool: True if deletion is successful, False otherwise.
         """
         pass

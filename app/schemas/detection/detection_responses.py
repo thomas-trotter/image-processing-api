@@ -9,11 +9,11 @@ class DetectionBox(BaseModel):
     Attributes:
         label (str): The label or name of the detected object.
         confidence (float): The confidence score of the detection (between 0 and 1).
-        box (list): The coordinates of the bounding box in the image (usually in the format [x_min, y_min, x_max, y_max]).
+        box (List[float]): The coordinates of the bounding box in the image (usually in the format [x_min, y_min, x_max, y_max]).
     """
     label: str 
     confidence: float  
-    box: list  
+    box: List[float]  
 
 
 class BoundingBoxResponse(BaseModel):
