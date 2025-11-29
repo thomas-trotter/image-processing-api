@@ -8,7 +8,7 @@ For detailed documentation, see the module's README.md file.
 """
 
 from fastapi import Depends, HTTPException
-from typing import Annotated
+from typing import Annotated, Callable, Any, Dict
 
 from app.services.image.image_editor import ImageEditService, get_image_edit_service
 from app.core.logging_config import get_logger
@@ -143,19 +143,22 @@ class EditManager:
         logger.info(f"Adjusting contrast of image '{image_name}' by factor={factor}")
         return self.edit_service.adjust_contrast(image_name, factor)
 
-    def apply_bulk_edits(self, image_name: str, edits: dict) -> dict:
+    def apply_bulk_edits(self, image_name: str, edits: Dict[str, Any]) -> Dict[str, str]:
         """
         Applies a series of edits in bulk based on a dictionary of edit commands.
 
         Args:
             image_name (str): Name of the image file.
-            edits (dict): Dictionary containing the edit operations and parameters.
+            edits (Dict[str, Any]): Dictionary containing the edit operations and parameters.
                 Supported keys: "resize", "grayscale", "rotate", "blur", "sharpen",
                 "brightness", "contrast".
 
         Returns:
-            dict: Dictionary with results of applied edits and their file paths.
+            Dict[str, str]: Dictionary with results of applied edits and their file paths.
                 Keys correspond to edit types (e.g., "resized", "grayscale").
+
+        Raises:
+            HTTPException: If any edit operation fails.
         """
         logger.info(f"Applying bulk edits to '{image_name}': {edits}")
         results = {}
@@ -187,7 +190,13 @@ class EditManager:
         logger.info(f"Completed bulk edits for '{image_name}'")
         return results
 
-    def process_image_edit(self, image_name: str, edit_method, *args, **kwargs):
+    def process_image_edit(
+        self, 
+        image_name: str, 
+        edit_method: Callable[..., str], 
+        *args: Any, 
+        **kwargs: Any
+    ) -> str:
         """
         Processes an image using a provided edit method.
 
@@ -196,7 +205,8 @@ class EditManager:
 
         Args:
             image_name (str): Name of the image file.
-            edit_method (callable): Callable method to apply an edit.
+            edit_method (Callable[..., str]): Callable method to apply an edit.
+                Should accept image_name and other parameters, returning a file path string.
             *args: Positional arguments for the edit method.
             **kwargs: Keyword arguments for the edit method.
 
