@@ -9,6 +9,7 @@ For detailed documentation, see the module's README.md file.
 
 from fastapi import APIRouter, Depends, Query, Request
 from typing import Annotated
+import asyncio
 
 from app.managers.edit_manager import EditManager, get_edit_manager
 from app.schemas.editing.editing_requests import RotateEditRequest, SharpenEditRequest
@@ -25,7 +26,7 @@ EditManagerDep = Annotated[EditManager, Depends(get_edit_manager)]
 
 @router.post("/resize", response_model=EditResponse)
 @limiter.limit("10/minute")
-def resize_image(
+async def resize_image(
     request: Request,
     image_name: str,
     service: EditManagerDep,
@@ -51,13 +52,15 @@ def resize_image(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If resizing fails.
     """
-    path = service.process_image_edit(image_name, service.apply_resize, image_name, width, height)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_resize, image_name, width, height
+    )
     return EditResponse(path=path)
 
 
 @router.post("/grayscale", response_model=EditResponse)
 @limiter.limit("20/minute")
-def convert_to_grayscale(
+async def convert_to_grayscale(
     request: Request,
     image_name: str,
     service: EditManagerDep,
@@ -79,13 +82,15 @@ def convert_to_grayscale(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If conversion fails.
     """
-    path = service.process_image_edit(image_name, service.apply_grayscale, image_name)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_grayscale, image_name
+    )
     return EditResponse(path=path)
 
 
 @router.post("/rotate", response_model=EditResponse)
 @limiter.limit("15/minute")
-def rotate_image(
+async def rotate_image(
     request: Request,
     image_name: str,
     rotate_params: RotateEditRequest,
@@ -112,13 +117,15 @@ def rotate_image(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If rotation fails.
     """
-    path = service.process_image_edit(image_name, service.apply_rotation, image_name, rotate_params.degrees, rotate_params.expand)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_rotation, image_name, rotate_params.degrees, rotate_params.expand
+    )
     return EditResponse(path=path)
 
 
 @router.post("/blur", response_model=EditResponse)
 @limiter.limit("10/minute")
-def blur_image(
+async def blur_image(
     request: Request,
     image_name: str,
     service: EditManagerDep,
@@ -143,12 +150,14 @@ def blur_image(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If blurring fails.
     """
-    path = service.process_image_edit(image_name, service.apply_blur, image_name, radius)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_blur, image_name, radius
+    )
     return EditResponse(path=path)
 
 @router.post("/sharpen", response_model=EditResponse)
 @limiter.limit("10/minute")
-def sharpen_image(
+async def sharpen_image(
     request: Request,
     image_name: str,
     sharpen_params: SharpenEditRequest,
@@ -178,13 +187,15 @@ def sharpen_image(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If sharpening fails.
     """
-    path = service.process_image_edit(image_name, service.apply_sharpen, image_name, sharpen_params.factor, sharpen_params.radius, sharpen_params.threshold)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_sharpen, image_name, sharpen_params.factor, sharpen_params.radius, sharpen_params.threshold
+    )
     return EditResponse(path=path)
 
 
 @router.post("/brightness", response_model=EditResponse)
 @limiter.limit("20/minute")
-def adjust_brightness(
+async def adjust_brightness(
     request: Request,
     image_name: str,
     service: EditManagerDep,
@@ -211,12 +222,14 @@ def adjust_brightness(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If brightness adjustment fails.
     """
-    path = service.process_image_edit(image_name, service.apply_brightness, image_name, factor)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_brightness, image_name, factor
+    )
     return EditResponse(path=path)
 
 @router.post("/contrast", response_model=EditResponse)
 @limiter.limit("20/minute")
-def adjust_contrast(
+async def adjust_contrast(
     request: Request,
     image_name: str,
     service: EditManagerDep,
@@ -243,6 +256,8 @@ def adjust_contrast(
     - **HTTPException 404**: If the image is not found.
     - **HTTPException 500**: If contrast adjustment fails.
     """
-    path = service.process_image_edit(image_name, service.apply_contrast, image_name, factor)
+    path = await asyncio.to_thread(
+        service.process_image_edit, image_name, service.apply_contrast, image_name, factor
+    )
     return EditResponse(path=path)
 

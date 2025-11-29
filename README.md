@@ -285,15 +285,30 @@ image-processing-api/
 └── requirements.txt             
 ```
 
+## ⚡ Performance & Architecture
+
+### Asynchronous Processing
+
+The API is built with **fully asynchronous route handlers** to maximize performance and concurrency:
+
+- All route handlers use `async def` for non-blocking request handling
+- Synchronous operations (file I/O, image processing, ML inference) are wrapped in `asyncio.to_thread()` to prevent event loop blocking
+- This allows the API to handle multiple concurrent requests efficiently
+- CPU-intensive tasks (image processing, object detection) run in thread pools without blocking other requests
+
+### Architecture Benefits
+
+- **High Concurrency**: Multiple requests can be processed simultaneously
+- **Non-Blocking I/O**: File operations don't block the event loop
+- **Scalable**: Efficient resource utilization for handling large workloads
+- **Responsive**: The API remains responsive even during heavy processing tasks
+
 ## 🛠️ Future Improvements
 
 Stay tuned for these upcoming features:
 
 - 🔒 **Authentication**:  
   Secure the API with user authentication.
-
-- ⚡ **Asynchronous Processing**:  
-  Improve API performance for handling large images or long-running tasks asynchronously.
 
 - 🖼️ **Batch Operations**:  
   Enable batch processing for uploading and processing multiple images at once.

@@ -9,6 +9,7 @@ For detailed documentation, see the module's README.md file.
 
 from fastapi import APIRouter, Request, UploadFile, HTTPException, status, Depends, Query
 from typing import Optional, List, Annotated
+import asyncio
 
 from app.schemas.image.image_responses import (
     ImageDetailResponse,
@@ -67,8 +68,8 @@ async def upload_image(
     """
     try:
         logger.info(f"Uploading image: {file.filename} as {filename or file.filename} with format {format}")
-        file_path = service.save_uploaded_image(file, filename, format)
-        metadata = service.get_image_metadata(file_path)
+        file_path = await asyncio.to_thread(service.save_uploaded_image, file, filename, format)
+        metadata = await asyncio.to_thread(service.get_image_metadata, file_path)
         logger.info(f"Image uploaded successfully: {file_path}")
         return ImageResponse(
             status="success",
@@ -114,7 +115,7 @@ async def get_images(
     - **HTTPException 500**: If listing fails.
     """
     logger.info(f"Fetching image list from folder: {folder}, limit={limit}, offset={offset}")
-    return service.list_images(folder, limit, offset)
+    return await asyncio.to_thread(service.list_images, folder, limit, offset)
 
 
 @router.get("/{image_name}/detail", response_model=ImageDetailResponse)
@@ -145,7 +146,7 @@ async def get_image(
     - **HTTPException 500**: If metadata extraction fails.
     """
     logger.info(f"Fetching details for image: {image_name} in folder: {folder}")
-    return service.get_image_by_id(image_name, folder)
+    return await asyncio.to_thread(service.get_image_by_id, image_name, folder)
 
 
 @router.get("/{image_name}/metadata/dimensions", response_model=ImageDimensionsResponse)
@@ -175,8 +176,8 @@ async def get_dimensions(
     - **HTTPException 500**: If dimension extraction fails.
     """
     logger.info(f"Fetching dimensions for image: {image_name} in folder: {folder}")
-    image_path = service.get_image_path(image_name, folder)
-    width, height = service.get_image_dimensions(image_path)
+    image_path = await asyncio.to_thread(service.get_image_path, image_name, folder)
+    width, height = await asyncio.to_thread(service.get_image_dimensions, image_path)
     return ImageDimensionsResponse(width=width, height=height)
 
 # Delete a specific image by its name
@@ -208,7 +209,7 @@ async def delete_image(
     - **HTTPException 500**: If deletion fails.
     """
     logger.info(f"Deleting image: {image_name} from folder: {folder}")
-    return service.delete_image(image_name, folder)
+    return await asyncio.to_thread(service.delete_image, image_name, folder)
 
 
 @router.post("/{image_name}/move", response_model=ImageDetailResponse)
@@ -246,7 +247,7 @@ async def move_image(
     - **HTTPException 500**: If the move operation fails.
     """
     logger.info(f"Moving image: {image_name} from {move_params.source_folder} to {move_params.target_folder}")
-    return service.move_image(image_name, move_params.source_folder, move_params.target_folder)
+    return await asyncio.to_thread(service.move_image, image_name, move_params.source_folder, move_params.target_folder)
 
 
 @router.delete("/clear_all", response_model=StatusResponse)
@@ -279,4 +280,4 @@ async def clear_images(
     be permanently deleted.
     """
     logger.warning(f"Clearing all images in folder: {folder}")
-    return service.delete_all_images(folder)
+    return await asyncio.to_thread(service.delete_all_images, folder)

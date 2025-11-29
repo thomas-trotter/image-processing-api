@@ -10,6 +10,7 @@ For detailed documentation, see the module's README.md file.
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import Annotated
+import asyncio
 
 from app.utils.file_operations.file_utils import FilePathResolver, get_file_path_resolver
 from app.managers.detection_manager import DetectionManager, get_detection_manager
@@ -63,11 +64,11 @@ async def bounding_boxes(
     start_time = time.time()
     logger.info(f"Request to detect bounding boxes for image: {image_name}")
 
-    image_path = file_resolver.find_and_validate_image(image_name)
+    image_path = await asyncio.to_thread(file_resolver.find_and_validate_image, image_name)
 
     try:
         logger.info(f"Processing image for bounding boxes: {image_name}")
-        data = manager.process_image_for_detection(image_path)
+        data = await asyncio.to_thread(manager.process_image_for_detection, image_path)
     except RuntimeError as e:
         logger.error(f"Error processing image: {image_name}, Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
@@ -119,11 +120,11 @@ async def detected_objects(
     start_time = time.time()
     logger.info(f"Request to retrieve detected objects for image: {image_name}")
 
-    image_path = file_resolver.find_and_validate_image(image_name)
+    image_path = await asyncio.to_thread(file_resolver.find_and_validate_image, image_name)
 
     try:
         logger.info(f"Retrieving detected objects for image: {image_name}")
-        detected = manager.get_detected_objects_summary(image_path)
+        detected = await asyncio.to_thread(manager.get_detected_objects_summary, image_path)
     except RuntimeError as e:
         logger.error(f"Error retrieving detected objects for image: {image_name}, Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error retrieving detected objects: {str(e)}")

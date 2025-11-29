@@ -10,6 +10,7 @@ For detailed documentation, see the module's README.md file.
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from pathlib import Path
+import asyncio
 
 from app.utils.system.clean_up import clean_up
 from app.core.logging_config import get_logger
@@ -38,5 +39,5 @@ async def lifespan(app: FastAPI):
     yield
 
     logger.info("Removing __pycache__ after shutdown...")
-    clean_up(project_root)
+    await asyncio.to_thread(clean_up, project_root)
     logger.info("Lifespan context ended.")
