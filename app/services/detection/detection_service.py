@@ -180,7 +180,7 @@ class ObjectDetectionService:
         logger.info(f"Bounding boxes saved to: {output_path}")
         return output_path 
 
-    def get_detected_objects(self, image_path: str) -> List[Dict[str, Union[str, float, List[int]]]]:
+    def get_detected_objects(self, image_path: str) -> List[Dict[str, Union[str, float, List[float]]]]:
         """
         Detects objects in an image and return detection metadata.
 
@@ -191,11 +191,11 @@ class ObjectDetectionService:
             image_path (str): The path to the image on which to perform object detection.
 
         Returns:
-            List[Dict[str, Union[str, float, List[int]]]]: A list of dictionaries representing detected objects,
+            List[Dict[str, Union[str, float, List[float]]]]: A list of dictionaries representing detected objects,
                 each containing:
                 - "label" (str): Object class name
                 - "confidence" (float): Detection confidence score (0.0 to 1.0)
-                - "box" (List[int]): Bounding box coordinates [x1, y1, x2, y2]
+                - "box" (List[float]): Bounding box coordinates [x1, y1, x2, y2]
         """
         image = Image.open(image_path)
 
