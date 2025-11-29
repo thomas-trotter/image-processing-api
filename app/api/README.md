@@ -32,6 +32,8 @@ Routes are organized by functionality:
 
 Each route file:
 - Defines FastAPI routers with appropriate prefixes and tags
+- Uses **async route handlers** (`async def`) for non-blocking request processing
+- Wraps synchronous operations in `asyncio.to_thread()` to prevent event loop blocking
 - Applies rate limiting via decorators
 - Uses dependency injection for managers
 - Handles request validation and error responses
@@ -61,15 +63,18 @@ app.include_router(detection_routes.router)
 Example:
 
 ```python
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from app.core.rate_limiting import limiter
+import asyncio
 
 router = APIRouter(prefix="/example", tags=["Example"])
 
 @router.get("/")
 @limiter.limit("10/minute")
 async def example_endpoint(request: Request, manager: ManagerDep):
-    return {"message": "Success"}
+    # Wrap sync operations in asyncio.to_thread() to avoid blocking
+    result = await asyncio.to_thread(manager.sync_operation, param)
+    return {"message": "Success", "data": result}
 ```
 
 ## Endpoint Patterns
