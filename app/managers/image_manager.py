@@ -7,7 +7,7 @@ retrieval, and metadata operations by coordinating multiple service classes.
 For detailed documentation, see the module's README.md file.
 """
 
-from typing import Dict, List, Optional, Annotated, Tuple
+from typing import Dict, List, Optional, Annotated, Tuple, Any
 from fastapi import UploadFile, Depends
 from pathlib import Path
 
@@ -107,7 +107,7 @@ class ImageManager:
         logger.debug(f"Getting image dimensions for: {image_path}")
         return self.metadata_extractor.get_dimensions(image_path)
 
-    def get_image_metadata(self, image_path: Path) -> Dict:
+    def get_image_metadata(self, image_path: Path) -> Dict[str, Any]:
         """
         Retrieves metadata from an image file.
 
@@ -115,13 +115,13 @@ class ImageManager:
             image_path (Path): Path to the image file.
 
         Returns:
-            Dict: Dictionary containing image metadata including filename,
+            Dict[str, Any]: Dictionary containing image metadata including filename,
                 format, mode, dimensions, size_bytes, and path.
         """
         logger.debug(f"Getting metadata for image: {image_path}")
         return self.metadata_extractor.get_metadata(image_path)
 
-    def get_image_by_id(self, image_id: str, folder: str = "uploaded") -> Dict:
+    def get_image_by_id(self, image_id: str, folder: str = "uploaded") -> Dict[str, Any]:
         """
         Retrieves image information by its ID.
 
@@ -130,12 +130,12 @@ class ImageManager:
             folder (str): Folder where the image is stored. Defaults to "uploaded".
 
         Returns:
-            Dict: Dictionary containing complete image metadata.
+            Dict[str, Any]: Dictionary containing complete image metadata.
         """
         logger.debug(f"Getting image by ID: {image_id}")
         return self.image_CRUD.get_image_by_id(image_id, folder)
 
-    def list_images(self, folder: str = "uploaded", limit: int = 100, offset: int = 0, subdirectory: Optional[str] = None) -> List[Dict]:
+    def list_images(self, folder: str = "uploaded", limit: int = 100, offset: int = 0, subdirectory: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Lists images in a folder with optional pagination and subdirectory filtering.
 
@@ -147,12 +147,12 @@ class ImageManager:
             subdirectory (Optional[str]): Optional subfolder name to search within.
 
         Returns:
-            List[Dict]: List of image metadata dictionaries.
+            List[Dict[str, Any]]: List of image metadata dictionaries.
         """
         logger.debug(f"Listing images in folder: {folder}, subdirectory: {subdirectory}")
         return self.image_CRUD.list_images(folder, limit, offset, subdirectory)
 
-    def delete_image(self, image_id: str, folder: str = "uploaded") -> Dict:
+    def delete_image(self, image_id: str, folder: str = "uploaded") -> Dict[str, Any]:
         """
         Deletes a single image by ID.
 
@@ -161,12 +161,12 @@ class ImageManager:
             folder (str): Folder from which to delete the image. Defaults to "uploaded".
 
         Returns:
-            Dict: Dictionary containing status, message, and deleted image metadata.
+            Dict[str, Any]: Dictionary containing status, message, and deleted image metadata.
         """
         logger.info(f"Deleting image with ID: {image_id} from folder: {folder}")
         return self.image_CRUD.delete_image(image_id, folder)
 
-    def delete_all_images(self, folder: str) -> Dict:
+    def delete_all_images(self, folder: str) -> Dict[str, str]:
         """
         Deletes all images in a specified folder.
 
@@ -175,12 +175,12 @@ class ImageManager:
                 "edited", "detected", or "all".
 
         Returns:
-            Dict: Dictionary containing status and message with deletion count.
+            Dict[str, str]: Dictionary containing status and message with deletion count.
         """
         logger.warning(f"Deleting all images in folder: {folder}")
         return self.image_CRUD.delete_all_images(folder)
 
-    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict:
+    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict[str, Any]:
         """
         Moves an image from one folder to another.
 
@@ -190,7 +190,7 @@ class ImageManager:
             target_folder (str): Folder to move the image to.
 
         Returns:
-            Dict: Dictionary containing the metadata of the moved image.
+            Dict[str, Any]: Dictionary containing the metadata of the moved image.
         """
         logger.info(f"Moving image {image_id} from {source_folder} to {target_folder}")
         return self.image_CRUD.move_image(image_id, source_folder, target_folder)
