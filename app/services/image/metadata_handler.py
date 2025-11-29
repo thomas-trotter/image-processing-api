@@ -7,7 +7,7 @@ and dimensions from image files.
 For detailed documentation, see the module's README.md file.
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from pathlib import Path
 from fastapi import HTTPException, status
 from PIL import Image
@@ -53,7 +53,7 @@ class ImageMetadataExtractor:
             )
     
     @staticmethod
-    def get_metadata(image_path: Path) -> Dict:
+    def get_metadata(image_path: Path) -> Dict[str, Any]:
         """
         Gets the metadata of an image.
 
@@ -64,7 +64,7 @@ class ImageMetadataExtractor:
             image_path (Path): The path to the image file.
 
         Returns:
-            Dict: A dictionary containing the image metadata with keys:
+            Dict[str, Any]: A dictionary containing the image metadata with keys:
                 - filename: Image filename
                 - format: Image format (JPEG, PNG, etc.)
                 - mode: Image mode (RGB, RGBA, etc.)
