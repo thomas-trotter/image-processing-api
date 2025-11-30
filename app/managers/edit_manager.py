@@ -164,7 +164,12 @@ class EditManager:
         results = {}
 
         if "resize" in edits:
-            width, height = edits["resize"]
+            resize_params = edits["resize"]
+            if isinstance(resize_params, dict):
+                width = resize_params.get("width")
+                height = resize_params.get("height")
+            else:
+                width, height = resize_params
             results["resized"] = self.apply_resize(image_name, width, height)
 
         if "grayscale" in edits:
@@ -216,13 +221,16 @@ class EditManager:
         Raises:
             HTTPException: If image processing fails.
         """
-        logger.info(f"Processing '{image_name}' using method '{edit_method.__name__}'")
+        method_name = getattr(edit_method, '__name__', 'unknown')
+        logger.info(f"Processing '{image_name}' using method '{method_name}'")
         try:
             result = edit_method(*args, **kwargs)
             logger.info(f"Successfully processed '{image_name}'. Result path: {result}")
             return result
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.error(f"Error processing '{image_name}' with '{edit_method.__name__}': {e}")
+            logger.error(f"Error processing '{image_name}' with '{method_name}': {e}")
             raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
 
 def get_edit_manager(edit_service: ImageEditServiceDep) -> EditManager:
