@@ -210,6 +210,62 @@ For complete API documentation with request/response schemas, visit the [interac
 
 ---
 
+## 🧪 Testing
+
+The project includes a comprehensive test suite with unit and integration tests, targeting 80%+ code coverage.
+
+### Test Structure
+
+The test suite is organized into two main categories:
+
+- **Unit Tests** (`tests/unit/`): Test individual components in isolation
+  - Services: image_editor, crud_operations, metadata_handler, local_storage, detection_service
+  - Managers: image_manager, edit_manager, detection_manager
+  - Utils: file_utils, directory_utils, validators
+
+- **Integration Tests** (`tests/integration/`): Test API endpoints and end-to-end workflows
+  - Image routes: upload, list, get details, delete, move, clear all
+  - Editing routes: resize, rotate, grayscale, blur, sharpen, brightness, contrast
+  - Detection routes: bounding boxes, detected objects
+  - End-to-end workflows: complete user scenarios
+
+### Running Tests
+
+Run all tests:
+```bash
+pytest
+```
+
+Run unit tests only:
+```bash
+pytest tests/unit
+```
+
+Run integration tests only:
+```bash
+pytest tests/integration
+```
+
+Run with coverage report:
+```bash
+pytest --cov=app --cov-report=html
+```
+
+The HTML coverage report will be generated in `htmlcov/index.html`.
+
+Run a specific test file:
+```bash
+pytest tests/unit/services/test_image_editor.py
+```
+
+### Test Coverage
+
+The test suite maintains 80%+ code coverage. Coverage reports are generated automatically when running tests with the `--cov` flag. The project uses pytest-cov for coverage tracking and HTML report generation.
+
+For comprehensive test documentation, including detailed test descriptions, fixtures, and testing strategies, see the [Test Suite Documentation](tests/README.md).
+
+---
+
 ## 📂 **Repository Structure**
 Here's a quick overview of the project file structure:
 ```graphql
