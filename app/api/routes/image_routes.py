@@ -20,6 +20,7 @@ from app.schemas.image.image_responses import (
 )
 from app.schemas.image.image_requests import MoveImageRequest
 from app.managers.image_manager import ImageManager, get_image_manager
+from app.utils.validator.simple_validator import SimpleImageValidator, get_simple_image_validator
 from app.core.rate_limiting import limiter
 from app.core.logging_config import get_logger
 
@@ -33,6 +34,7 @@ router = APIRouter(
 
 
 ImageManagerDep = Annotated[ImageManager, Depends(get_image_manager)]
+ImageValidatorDep = Annotated[SimpleImageValidator, Depends(get_simple_image_validator)]
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED, response_model=ImageResponse)
@@ -40,6 +42,7 @@ ImageManagerDep = Annotated[ImageManager, Depends(get_image_manager)]
 async def upload_image(
     request: Request,
     service: ImageManagerDep,
+    validator: ImageValidatorDep,
     file: UploadFile,
     filename: Optional[str] = None,
     format: str = "JPEG"
@@ -67,6 +70,10 @@ async def upload_image(
     - **HTTPException 500**: If the upload or processing fails.
     """
     try:
+        
+        await asyncio.to_thread(validator.validate, file) 
+        await asyncio.to_thread(validator.validate_format, format)
+        
         logger.info(f"Uploading image: {file.filename} as {filename or file.filename} with format {format}")
         file_path = await asyncio.to_thread(service.save_uploaded_image, file, filename, format)
         metadata = await asyncio.to_thread(service.get_image_metadata, file_path)
