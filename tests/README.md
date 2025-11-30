@@ -13,8 +13,7 @@ tests/
 │   ├── services/          # Service layer tests
 │   ├── managers/          # Manager layer tests
 │   └── utils/             # Utility tests
-├── integration/           # Integration tests for API endpoints
-└── fixtures/              # Test data and fixtures
+└── integration/           # Integration tests for API endpoints
 ```
 
 ## Running Tests
