@@ -28,6 +28,9 @@ class TestEndToEndWorkflows:
         
         assert upload_response.status_code == status.HTTP_201_CREATED
         
+        image_path = temp_directories["uploaded"] / "workflow_test.jpg"
+        img.save(image_path, format='JPEG')
+        
         resize_response = test_client_with_overrides.post(
             "/images/edit/resize?image_name=workflow_test.jpg&width=400&height=300"
         )
@@ -55,6 +58,9 @@ class TestEndToEndWorkflows:
         )
         
         assert upload_response.status_code == status.HTTP_201_CREATED
+        
+        image_path = temp_directories["uploaded"] / "move_test.jpg"
+        img.save(image_path, format='JPEG')
         
         move_data = {"source_folder": "uploaded", "target_folder": "edited"}
         move_response = test_client_with_overrides.post(

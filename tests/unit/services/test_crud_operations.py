@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import Mock
 from fastapi import HTTPException
 from PIL import Image
+from pathlib import Path
 
 from app.services.image.crud_operations import ImageCRUDService
 from app.schemas.image.image_responses import ImageListItem
@@ -23,16 +24,18 @@ class TestImageCRUDService:
         mock_dir_manager.validate_folder.side_effect = lambda folder: folder in temp_directories
         
         mock_metadata_extractor = Mock()
-        mock_metadata_extractor.get_metadata.return_value = {
-            "filename": "test.jpg",
-            "format": "JPEG",
-            "mode": "RGB",
-            "width": 800,
-            "height": 600,
-            "size_bytes": 102400,
-            "path": str(temp_directories["uploaded"] / "test.jpg"),
-            "url": None
-        }
+        def get_metadata_side_effect(image_path):
+            return {
+                "filename": Path(image_path).name,
+                "format": "JPEG",
+                "mode": "RGB",
+                "width": 800,
+                "height": 600,
+                "size_bytes": 102400,
+                "path": str(image_path),
+                "url": None
+            }
+        mock_metadata_extractor.get_metadata.side_effect = get_metadata_side_effect
         
         mock_file_resolver = Mock()
         

@@ -8,7 +8,7 @@ initialization.
 For detailed documentation, see the module's README.md file.
 """
 
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
@@ -63,15 +63,10 @@ class Settings(BaseSettings):
     EDITED_FOLDER: Path = Field(default_factory=lambda: Path("app/static/edited"))
     DETECTED_FOLDER: Path = Field(default_factory=lambda: Path("app/static/detected"))
 
-    class Config:
-        """
-        Configuration for loading environment variables.
-
-        Configures Pydantic to load settings from the .env file and allow
-        extra fields that aren't explicitly defined in the Settings class.
-        """
-        env_file = ".env"
-        extra = "allow"
+    model_config = ConfigDict(
+        env_file=".env",
+        extra="allow"
+    )
 
     def setup(self) -> None:
         """

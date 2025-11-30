@@ -10,7 +10,7 @@ For detailed documentation, see the module's README.md file.
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 from pathlib import Path
 from typing import Annotated, Dict, Callable, Any, Optional
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 import os
 
@@ -109,6 +109,8 @@ class ImageEditService:
                 
                 logger.info(f"Successfully processed image {image_name} with {suffix} operation.")
                 return output_path
+        except HTTPException as e:
+            raise
         except Exception as e:
             logger.error(f"Error processing image {image_name}: {e}")
             raise ValueError(f"Error processing image {image_path}: {e}")
