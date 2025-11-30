@@ -3,6 +3,7 @@ Unit tests for ImageManager.
 """
 
 import pytest
+from PIL import Image
 
 from app.managers.image_manager import ImageManager
 
@@ -57,8 +58,12 @@ class TestImageManager:
         assert "filename" in metadata
         image_manager.metadata_extractor.get_metadata.assert_called_once()
 
-    def test_get_image_by_id(self, image_manager):
+    def test_get_image_by_id(self, image_manager, temp_directories):
         """Test getting image by ID."""
+        image_path = temp_directories["uploaded"] / "test.jpg"
+        img = Image.new('RGB', (800, 600), color='red')
+        img.save(image_path, format='JPEG')
+        
         result = image_manager.get_image_by_id("test.jpg", "uploaded")
         
         assert result is not None
@@ -71,8 +76,12 @@ class TestImageManager:
         assert isinstance(result, list)
         image_manager.image_CRUD.list_images.assert_called_once_with("uploaded", 10, 0, None)
 
-    def test_delete_image(self, image_manager):
+    def test_delete_image(self, image_manager, temp_directories):
         """Test deleting image."""
+        image_path = temp_directories["uploaded"] / "test.jpg"
+        img = Image.new('RGB', (800, 600), color='red')
+        img.save(image_path, format='JPEG')
+        
         result = image_manager.delete_image("test.jpg", "uploaded")
         
         assert result is not None
@@ -85,8 +94,12 @@ class TestImageManager:
         assert result is not None
         image_manager.image_CRUD.delete_all_images.assert_called_once_with("uploaded")
 
-    def test_move_image(self, image_manager):
+    def test_move_image(self, image_manager, temp_directories):
         """Test moving image."""
+        image_path = temp_directories["uploaded"] / "test.jpg"
+        img = Image.new('RGB', (800, 600), color='red')
+        img.save(image_path, format='JPEG')
+        
         result = image_manager.move_image("test.jpg", "uploaded", "edited")
         
         assert result is not None
