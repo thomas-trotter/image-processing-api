@@ -12,6 +12,7 @@ This module provides common fixtures used across all tests including:
 import pytest
 import shutil
 import uuid
+import os
 from pathlib import Path
 from typing import Dict
 from unittest.mock import Mock, patch
@@ -96,8 +97,19 @@ def mock_file_path_resolver(temp_directories: Dict[str, Path]) -> Mock:
 def mock_image_validator() -> Mock:
     """Create a mock SimpleImageValidator."""
     mock = Mock(spec=SimpleImageValidator)
-    mock.validate.return_value = None
-    mock.validate_type.return_value = None
+    
+    def validate_side_effect(file: UploadFile):
+        """Validate file type - reject non-image files."""
+        if file.content_type and not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}. Allowed types: image/jpeg, image/png")
+    
+    def validate_type_side_effect(file: UploadFile):
+        """Validate file type."""
+        if file.content_type and not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}. Allowed types: image/jpeg, image/png")
+    
+    mock.validate.side_effect = validate_side_effect
+    mock.validate_type.side_effect = validate_type_side_effect
     mock.validate_size.return_value = None
     mock.validate_format.side_effect = lambda fmt: fmt.upper()
     mock.get_extension.side_effect = lambda fmt: {
@@ -112,17 +124,43 @@ def mock_image_validator() -> Mock:
 def mock_metadata_extractor() -> Mock:
     """Create a mock ImageMetadataExtractor."""
     mock = Mock(spec=ImageMetadataExtractor)
-    mock.get_dimensions.return_value = (800, 600)
-    mock.get_metadata.return_value = {
-        "filename": "test.jpg",
-        "format": "JPEG",
-        "mode": "RGB",
-        "width": 800,
-        "height": 600,
-        "size_bytes": 102400,
-        "path": "/path/to/test.jpg",
-        "url": None
-    }
+    
+    def get_dimensions_side_effect(image_path):
+        """Get actual dimensions from image file if it exists."""
+        try:
+            with Image.open(image_path) as img:
+                return (img.width, img.height)
+        except (FileNotFoundError, OSError):
+            return (800, 600)
+    
+    def get_metadata_side_effect(image_path):
+        """Get actual metadata from image file if it exists."""
+        try:
+            with Image.open(image_path) as img:
+                return {
+                    "filename": Path(image_path).name,
+                    "format": img.format,
+                    "mode": img.mode,
+                    "width": img.width,
+                    "height": img.height,
+                    "size_bytes": os.path.getsize(image_path) if os.path.exists(image_path) else 102400,
+                    "path": str(image_path),
+                    "url": None
+                }
+        except (FileNotFoundError, OSError):
+            return {
+                "filename": Path(image_path).name if isinstance(image_path, (str, Path)) else "test.jpg",
+                "format": "JPEG",
+                "mode": "RGB",
+                "width": 800,
+                "height": 600,
+                "size_bytes": 102400,
+                "path": str(image_path) if isinstance(image_path, (str, Path)) else "/path/to/test.jpg",
+                "url": None
+            }
+    
+    mock.get_dimensions.side_effect = get_dimensions_side_effect
+    mock.get_metadata.side_effect = get_metadata_side_effect
     return mock
 
 
@@ -136,34 +174,79 @@ def mock_image_crud_service(temp_directories: Dict[str, Path]) -> Mock:
     
     mock.get_image_path.side_effect = get_image_path_side_effect
     mock.list_images.return_value = []
-    mock.get_image_by_id.return_value = {
-        "filename": "test.jpg",
-        "format": "JPEG",
-        "mode": "RGB",
-        "width": 800,
-        "height": 600,
-        "size_bytes": 102400,
-        "path": str(temp_directories["uploaded"] / "test.jpg")
-    }
-    mock.delete_image.return_value = {
-        "status": "success",
-        "message": "Image deleted successfully",
-        "metadata": {}
-    }
+    def get_image_by_id_side_effect(image_id: str, folder: str = "uploaded"):
+        image_path = temp_directories.get(folder, temp_directories["uploaded"]) / image_id
+        if not image_path.exists():
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found in {folder}")
+        try:
+            with Image.open(image_path) as img:
+                return {
+                    "filename": Path(image_path).name,
+                    "format": img.format,
+                    "mode": img.mode,
+                    "width": img.width,
+                    "height": img.height,
+                    "size_bytes": os.path.getsize(image_path) if os.path.exists(image_path) else 102400,
+                    "path": str(image_path),
+                    "url": None
+                }
+        except (FileNotFoundError, OSError):
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found in {folder}")
+    
+    mock.get_image_by_id.side_effect = get_image_by_id_side_effect
+    def delete_image_side_effect(image_id: str, folder: str = "uploaded"):
+        image_path = temp_directories.get(folder, temp_directories["uploaded"]) / image_id
+        if not image_path.exists():
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found in {folder} folder")
+        if image_path.exists():
+            image_path.unlink()
+        return {
+            "status": "success",
+            "message": f"Image {image_id} deleted from {folder}",
+            "deleted_image": {}
+        }
+    mock.delete_image.side_effect = delete_image_side_effect
     mock.delete_all_images.return_value = {
         "status": "success",
         "message": "All images deleted",
         "count": 0
     }
-    mock.move_image.return_value = {
-        "filename": "test.jpg",
-        "format": "JPEG",
-        "mode": "RGB",
-        "width": 800,
-        "height": 600,
-        "size_bytes": 102400,
-        "path": str(temp_directories["edited"] / "test.jpg")
-    }
+    def move_image_side_effect(image_id: str, source_folder: str, target_folder: str):
+        source_path = temp_directories.get(source_folder, temp_directories["uploaded"]) / image_id
+        target_path = temp_directories.get(target_folder, temp_directories["edited"]) / image_id
+        
+        if not source_path.exists():
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found in {source_folder}")
+        if target_path.exists():
+            raise HTTPException(status_code=409, detail=f"Image {image_id} already exists in {target_folder}")
+        
+        shutil.move(str(source_path), str(target_path))
+
+        try:
+            with Image.open(target_path) as img:
+                return {
+                    "filename": Path(target_path).name,
+                    "format": img.format,
+                    "mode": img.mode,
+                    "width": img.width,
+                    "height": img.height,
+                    "size_bytes": os.path.getsize(target_path) if os.path.exists(target_path) else 102400,
+                    "path": str(target_path),
+                    "url": None
+                }
+        except (FileNotFoundError, OSError):
+            return {
+                "filename": Path(target_path).name,
+                "format": "JPEG",
+                "mode": "RGB",
+                "width": 800,
+                "height": 600,
+                "size_bytes": 102400,
+                "path": str(target_path),
+                "url": None
+            }
+    
+    mock.move_image.side_effect = move_image_side_effect
     return mock
 
 
@@ -189,13 +272,25 @@ def mock_local_storage(temp_directories: Dict[str, Path]) -> Mock:
 def mock_image_edit_service(temp_directories: Dict[str, Path]) -> Mock:
     """Create a mock ImageEditService."""
     mock = Mock(spec=ImageEditService)
-    mock.resize_image.return_value = str(temp_directories["edited"] / "test_resized.jpg")
-    mock.rotate_image.return_value = str(temp_directories["edited"] / "test_rotated.jpg")
-    mock.convert_to_grayscale.return_value = str(temp_directories["edited"] / "test_gray.jpg")
-    mock.blur_image.return_value = str(temp_directories["edited"] / "test_blurred.jpg")
-    mock.sharpen_image.return_value = str(temp_directories["edited"] / "test_sharpened.jpg")
-    mock.adjust_brightness.return_value = str(temp_directories["edited"] / "test_brightness.jpg")
-    mock.adjust_contrast.return_value = str(temp_directories["edited"] / "test_contrast.jpg")
+    
+    def edit_side_effect(image_name: str, *args, **kwargs):
+        """Check if source image exists before processing."""
+        source_path = temp_directories["uploaded"] / image_name
+        if not source_path.exists():
+            raise HTTPException(status_code=404, detail=f"Image {image_name} not found in uploaded")
+        output_name = f"{Path(image_name).stem}_resized.jpg"
+        output_path = temp_directories["edited"] / output_name
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.touch()
+        return str(output_path)
+    
+    mock.resize_image.side_effect = lambda img_name, w, h: edit_side_effect(img_name)
+    mock.rotate_image.side_effect = lambda img_name, *args, **kwargs: edit_side_effect(img_name)
+    mock.convert_to_grayscale.side_effect = lambda img_name: edit_side_effect(img_name)
+    mock.blur_image.side_effect = lambda img_name, *args, **kwargs: edit_side_effect(img_name)
+    mock.sharpen_image.side_effect = lambda img_name, *args, **kwargs: edit_side_effect(img_name)
+    mock.adjust_brightness.side_effect = lambda img_name, *args, **kwargs: edit_side_effect(img_name)
+    mock.adjust_contrast.side_effect = lambda img_name, *args, **kwargs: edit_side_effect(img_name)
     return mock
 
 
@@ -204,7 +299,6 @@ def mock_detection_service(temp_directories: Dict[str, Path]) -> Mock:
     """Create a mock ObjectDetectionService with mocked DETR model."""
     mock = Mock(spec=ObjectDetectionService)
     
-    # Mock detection results
     mock_detections = [
         {
             "label": "person",
