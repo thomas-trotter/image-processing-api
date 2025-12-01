@@ -15,3 +15,8 @@ __pycache__/
 htmlcov/
 *.cover
 .hypothesis/
+
+# Ignore image uploads, edited, and detected
+app/static/uploaded/
+app/static/edited/
+app/static/detected/
