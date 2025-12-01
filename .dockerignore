@@ -20,6 +20,9 @@ env/
 htmlcov/
 *.cover
 .hypothesis/
+tests/
+pytest.ini
+.coveragerc
 
 # Logs
 logs/
@@ -43,6 +46,12 @@ Thumbs.db
 # Documentation
 README.md
 LICENSE
+*.md
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
 
 # OneDrive
 OneDrive*
