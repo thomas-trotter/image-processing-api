@@ -170,6 +170,12 @@ class EditManager:
                 height = resize_params.get("height")
             else:
                 width, height = resize_params
+            if width is None or height is None:
+                logger.error(f"Width and height are required for resizing. Received: width={width}, height={height}")
+                raise HTTPException(status_code=422, detail="Width and height are required for resizing")
+            if not isinstance(width, int) or not isinstance(height, int):
+                logger.error(f"Width and height must be integers. Received: width={width} (type: {type(width).__name__}), height={height} (type: {type(height).__name__})")
+                raise HTTPException(status_code=422, detail="Width and height must be integers")
             results["resized"] = self.apply_resize(image_name, width, height)
 
         if "grayscale" in edits:
