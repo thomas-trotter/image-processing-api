@@ -10,7 +10,7 @@ For detailed documentation, see the main README.md file.
 
 from fastapi import FastAPI
 
-from app.api.routes import detection_routes, image_routes, editing_routes
+from app.api.routes import detection_routes, image_routes, editing_routes, health_routes
 from app.utils.system.lifespan import lifespan
 
 description = """
@@ -39,6 +39,6 @@ app = FastAPI(
 app.include_router(image_routes.router)
 app.include_router(editing_routes.router)
 app.include_router(detection_routes.router)
-
+app.include_router(health_routes.router)
 
 
