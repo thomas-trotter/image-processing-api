@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class StatusResponse(BaseModel):
@@ -53,7 +54,7 @@ class ImageListItem(BaseModel):
         height (int): The height of the image in pixels.
         size_bytes (int): The size of the image file in bytes.
         path (str): The file path to the image.
-        url (None): Placeholder for a URL, currently set to None.
+        url (Optional[str]): Placeholder for a URL, currently set to None.
         folder (str): The folder where the image is stored.
     """
     filename: str 
@@ -63,7 +64,7 @@ class ImageListItem(BaseModel):
     height: int    
     size_bytes: int  
     path: str      
-    url: None      
+    url: Optional[str] = None      
     folder: str   
 
 
@@ -72,11 +73,14 @@ class ImageDetailResponse(BaseModel):
     Represents a detailed response for an image, including its metadata and other details.
     
     Attributes:
-        id (str): The unique identifier for the image.
-        name (str): The name of the image.
+        filename (str): The name of the image.
+        format (str): The format of the image (e.g., JPEG, PNG).
+        mode (str): The mode of the image (e.g., RGB, L).
+        width (int): The width of the image in pixels.
+        height (int): The height of the image in pixels.
+        size_bytes (int): The size of the image file in bytes.
         path (str): The file path to the image.
-        size_kb (float): The size of the image in kilobytes.
-        metadata (ImageMetadata): The metadata information about the image (format, mode, dimensions).
+        url (Optional[str]): Placeholder for a URL, currently set to None.
     """
     filename: str  
     format: str    
@@ -85,7 +89,7 @@ class ImageDetailResponse(BaseModel):
     height: int      
     size_bytes: int  
     path: str        
-    url: None        
+    url: Optional[str] = None        
 
 
 class ImageDimensionsResponse(BaseModel):
@@ -96,5 +100,5 @@ class ImageDimensionsResponse(BaseModel):
         width (int): The width of the image in pixels.
         height (int): The height of the image in pixels.
     """
-    width: int    # The width of the image in pixels
-    height: int   # The height of the image in pixels
+    width: int    
+    height: int   
