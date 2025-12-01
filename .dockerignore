@@ -1,36 +1,33 @@
-# Git
-.git
-.gitignore
-
-# Python
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-.venv
-venv/
-ENV/
-env/
 
-# Testing
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+ENV/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Testing artifacts
+htmlcov/
 .pytest_cache/
 .coverage
-.coverage.*
-htmlcov/
 *.cover
 .hypothesis/
-tests/
-pytest.ini
-.coveragerc
+.tox/
 
 # Logs
-logs/
 *.log
-
-# Environment
-.env
-.env-example
+logs/*.log
 
 # IDE
 .vscode/
@@ -44,14 +41,19 @@ logs/
 Thumbs.db
 
 # Documentation
-README.md
-LICENSE
 *.md
+!README.md
 
-# Docker
-Dockerfile
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker files
 docker-compose*.yml
+Dockerfile
 .dockerignore
 
-# OneDrive
-OneDrive*
+# OneDrive sync files
+*.tmp
+~$*
