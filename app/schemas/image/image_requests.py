@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-# Model to represent the request for moving an image from one folder to another
+
 class MoveImageRequest(BaseModel):
     """
     Represents a request to move an image from one folder to another.

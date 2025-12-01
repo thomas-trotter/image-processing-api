@@ -1,30 +1,44 @@
+"""
+Object detection service using DETR model.
 
-from io import BytesIO
-from tempfile import SpooledTemporaryFile  
+This module provides the ObjectDetectionService class for performing object
+detection on images using the DETR (DEtection TRansformer) model.
+
+For detailed documentation, see the module's README.md file.
+"""
+
 from transformers import DetrImageProcessor, DetrForObjectDetection
-from PIL import Image, ImageDraw, ImageFont 
-from typing import Annotated
+from typing import List, Dict, Tuple, Annotated, Union
+from PIL import Image, ImageDraw, ImageFont
+from tempfile import SpooledTemporaryFile 
 from fastapi import Depends, UploadFile
 from random import randint
+from io import BytesIO 
 
+import warnings
 import torch 
 import os 
-import warnings
 
-from app.services.image.storage.local_storage import LocalImageStorage, get_local_image_storage  # Local storage service
+
+from app.services.image.storage.local_storage import LocalImageStorage, get_local_image_storage
 from app.core.logging_config import get_logger
 
-# Annotating dependencies for local storage
+
 LocalImageStorageDep = Annotated[LocalImageStorage, Depends(get_local_image_storage)]
 
-# Setting up logging for the ObjectDetectionService class
+
 logger = get_logger("detection_service")
 
 class ObjectDetectionService:
     """
-    A service for performing object detection on images using the DETR model.
-    
-    @param local_storage: A service for saving and retrieving images from local storage.
+    Service for performing object detection on images using the DETR model.
+
+    Uses the facebook/detr-resnet-50 model to detect objects in images and
+    generate bounding boxes with labels and confidence scores.
+
+    Args:
+        local_storage (LocalImageStorage): A service for saving and retrieving
+            images from local storage.
     """
     def __init__(self, local_storage: LocalImageStorageDep):
         warnings.filterwarnings("ignore", category=UserWarning, module='torch')  # Ignore PyTorch warnings
@@ -37,8 +51,13 @@ class ObjectDetectionService:
         """
         Returns a font for drawing text on the image.
 
-        @param size: The size of the font.
-        @return: An ImageFont object for text rendering.
+        Attempts to load Arial font, falls back to default font if not available.
+
+        Args:
+            size (int): The size of the font in points.
+
+        Returns:
+            ImageFont: An ImageFont object for text rendering.
         """
         try:
             return ImageFont.truetype("arial.ttf", size)
@@ -46,22 +65,32 @@ class ObjectDetectionService:
             logger.warning("Arial font not found, using default font.")
             return ImageFont.load_default()
 
-    def _get_random_colour(self) -> tuple[str, tuple[int, int, int]]:
+    def _get_random_colour(self) -> Tuple[str, Tuple[int, int, int]]:
         """
         Generates a random color in both hex and RGB formats.
 
-        @return: A tuple containing the hex color code and the RGB tuple.
+        Returns:
+            Tuple[str, Tuple[int, int, int]]: A tuple containing:
+                - hex color code (str): Hex string like "#ff0000"
+                - RGB tuple (Tuple[int, int, int]): RGB values (r, g, b)
         """
         r, g, b = randint(0, 255), randint(0, 255), randint(0, 255)
         hex_color = f"#{r:02x}{g:02x}{b:02x}"
         return hex_color, (r, g, b)
 
-    def _get_text_colour(self, rgb: tuple[int, int, int]) -> str:
+    def _get_text_colour(self, rgb: Tuple[int, int, int]) -> str:
         """
-        Determines an appropriate text color (black or white) based on the background color brightness.
+        Determines an appropriate text color based on background brightness.
 
-        @param rgb: The RGB color of the background.
-        @return: A hex string representing either black or white, depending on the background brightness.
+        Uses luminance calculation to choose black or white text for optimal
+        readability against the background color.
+
+        Args:
+            rgb (Tuple[int, int, int]): The RGB color of the background.
+
+        Returns:
+            str: A hex string representing either "#000000" (black) or
+                "#ffffff" (white), depending on the background brightness.
         """
         r, g, b = rgb
         brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255 
@@ -71,9 +100,13 @@ class ObjectDetectionService:
         """
         Converts a Pillow image object to a FastAPI UploadFile.
 
-        @param image: The image to convert.
-        @param filename: The desired filename for the uploaded image.
-        @return: An UploadFile object that can be used with FastAPI.
+        Args:
+            image (Image.Image): The image to convert.
+            filename (str): The desired filename for the uploaded image.
+                Defaults to "image.png".
+
+        Returns:
+            UploadFile: An UploadFile object that can be used with FastAPI.
         """
         img_byte_arr = BytesIO()  # Create a byte stream for the image
         image.save(img_byte_arr, format=image.format or "PNG")  # Save image in memory
@@ -87,10 +120,17 @@ class ObjectDetectionService:
 
     def get_bounding_boxes(self, image_path: str) -> str:
         """
-        Detects objects in an image and draws bounding boxes around them.
+        Detects objects in an image and draw bounding boxes around them.
 
-        @param image_path: The path to the image on which to perform object detection.
-        @return: The path to the new image with bounding boxes drawn on it.
+        Performs object detection using the DETR model, draws bounding boxes
+        with random colors, and adds labels with confidence scores.
+
+        Args:
+            image_path (str): The path to the image on which to perform object detection.
+
+        Returns:
+            str: The path to the new image with bounding boxes drawn on it.
+                Saved to the "detected" folder.
         """
         image = Image.open(image_path)  
         image_copy = image.copy() 
@@ -140,12 +180,22 @@ class ObjectDetectionService:
         logger.info(f"Bounding boxes saved to: {output_path}")
         return output_path 
 
-    def get_detected_objects(self, image_path: str) -> list:
+    def get_detected_objects(self, image_path: str) -> List[Dict[str, Union[str, float, List[float]]]]:
         """
-        Detects objects in an image and returns the detected objects with their labels and confidence scores.
+        Detects objects in an image and return detection metadata.
 
-        @param image_path: The path to the image on which to perform object detection.
-        @return: A list of dictionaries representing detected objects, each containing the label, confidence score, and bounding box.
+        Performs object detection and returns only the detection results
+        without creating a visualization.
+
+        Args:
+            image_path (str): The path to the image on which to perform object detection.
+
+        Returns:
+            List[Dict[str, Union[str, float, List[float]]]]: A list of dictionaries representing detected objects,
+                each containing:
+                - "label" (str): Object class name
+                - "confidence" (float): Detection confidence score (0.0 to 1.0)
+                - "box" (List[float]): Bounding box coordinates [x1, y1, x2, y2]
         """
         image = Image.open(image_path)
 
@@ -172,9 +222,13 @@ class ObjectDetectionService:
 
 def get_object_detection_service(local_storage: LocalImageStorageDep) -> ObjectDetectionService:
     """
-    Dependency function to create an instance of ObjectDetectionService.
+    Creates an instance of ObjectDetectionService.
 
-    @param local_storage: A service for saving and retrieving images from local storage.
-    @return: An instance of the ObjectDetectionService class.
+    Args:
+        local_storage (LocalImageStorage): A service for saving and retrieving
+            images from local storage.
+
+    Returns:
+        ObjectDetectionService: An instance of the ObjectDetectionService class.
     """
     return ObjectDetectionService(local_storage=local_storage)

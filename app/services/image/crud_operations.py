@@ -1,9 +1,17 @@
-from typing import Dict, List, Optional, Annotated
+"""
+Image CRUD (Create, Read, Update, Delete) operations service.
+
+This module provides the ImageCRUDService class for Create, Read, Update, Delete
+operations on images including listing, retrieval, deletion, and movement.
+
+For detailed documentation, see the module's README.md file.
+"""
+
+from typing import Dict, List, Optional, Annotated, Any, Union
+from fastapi import HTTPException, Depends
 from pathlib import Path
 import shutil
 
-
-from fastapi import HTTPException, Depends
 
 from app.core.dependencies import get_directories
 from app.utils.file_operations.directory_utils import DirectoryManager, get_directory_manager
@@ -12,7 +20,7 @@ from app.services.image.metadata_handler import ImageMetadataExtractor, get_imag
 from app.core.logging_config import get_logger
 from app.schemas.image.image_responses import ImageListItem
 
-# Dependency types
+
 DirectoryManagerDep = Annotated[DirectoryManager, Depends(get_directory_manager)]
 ImageMetadataExtractorDep = Annotated[ImageMetadataExtractor, Depends(get_image_metadata_extractor)]
 FilePathResolverDep = Annotated[FilePathResolver, Depends(get_file_path_resolver)]
@@ -22,6 +30,18 @@ DirectoriesDep = Annotated[Dict[str, Path], Depends(get_directories)]
 logger = get_logger("crud_operations")
 
 class ImageCRUDService:
+    """
+    Service for image CRUD operations.
+
+    Handles Create, Read, Update, Delete operations for images including
+    listing, retrieval, deletion, and movement between folders.
+
+    Args:
+        directory_manager (DirectoryManager): Handles directory-related operations.
+        metadata_extractor (ImageMetadataExtractor): Extracts metadata from images.
+        file_resolver (FilePathResolver): Helps to find files in the storage.
+        directories (Dict[str, Path]): Directory mappings for different image categories.
+    """
     def __init__(
         self,
         directory_manager: DirectoryManagerDep,
@@ -30,14 +50,13 @@ class ImageCRUDService:
         directories: DirectoriesDep
     ):
         """
-        Initialize the ImageCRUDService with required dependencies.
+        Initializes the ImageCRUDService with required dependencies.
 
-        @param directory_manager: Handles directory-related operations.
-        @param metadata_extractor: Extracts metadata from images.
-        @param file_resolver: Helps to find files in the storage.
-        @param directories: Directory mappings for different image categories.
-
-        @returns: None
+        Args:
+            directory_manager (DirectoryManager): Handles directory-related operations.
+            metadata_extractor (ImageMetadataExtractor): Extracts metadata from images.
+            file_resolver (FilePathResolver): Helps to find files in the storage.
+            directories (Dict[str, Path]): Directory mappings for different image categories.
         """
         self.directory_manager = directory_manager
         self.metadata_extractor = metadata_extractor
@@ -48,7 +67,9 @@ class ImageCRUDService:
         """
         Get the folder map that associates folder names with directories.
 
-        @returns: A dictionary of folder names and corresponding directory paths.
+        Returns:
+            Dict[str, List[Path]]: A dictionary mapping folder names to lists of
+                directory paths. Keys: "uploaded", "edited", "detected", "all".
         """
         return {
             "uploaded": [self.directories["uploaded"]],
@@ -57,14 +78,22 @@ class ImageCRUDService:
             "all": list(self.directories.values())
         }
 
-    def delete_image(self, image_id: str, folder: str) -> Dict:
+    def delete_image(self, image_id: str, folder: str) -> Dict[str, Union[str, Dict[str, Any]]]:
         """
-        Delete an image and its metadata from the specified folder.
+        Deletes an image and its metadata from the specified folder.
 
-        @param image_id: The ID of the image to delete.
-        @param folder: The folder where the image is located.
+        Args:
+            image_id (str): The ID (filename) of the image to delete.
+            folder (str): The folder where the image is located.
 
-        @returns: A dictionary with status and message about the deletion.
+        Returns:
+            Dict[str, Union[str, Dict[str, Any]]]: A dictionary with status, message, and deleted image metadata.
+                - "status" (str): The status of the operation.
+                - "message" (str): The message of the operation.
+                - "deleted_image" (Dict[str, Any]): The metadata of the deleted image.
+
+        Raises:
+            HTTPException: If the image is not found or deletion fails.
         """
         directory = self.directory_manager.get_directory(folder)
         image_path = directory / image_id
@@ -74,14 +103,12 @@ class ImageCRUDService:
             raise HTTPException(status_code=404, detail=f"Image {image_id} not found in {folder} folder")
 
         try:
-            # Extract metadata and delete it if it exists
             image_info = self.metadata_extractor.get_metadata(image_path)
             metadata_path = image_path.with_suffix('.json')
             if metadata_path.exists():
                 metadata_path.unlink()
                 logger.info(f"Deleted metadata for {image_id}")
 
-            # Delete the image file
             image_path.unlink()
             logger.info(f"Deleted image {image_id} from {folder}")
 
@@ -94,13 +121,20 @@ class ImageCRUDService:
             logger.error(f"Error deleting image: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to delete image: {e}")
 
-    def delete_all_images(self, folder: str) -> Dict:
+    def delete_all_images(self, folder: str) -> Dict[str, str]:
         """
-        Delete all images from a specified folder.
+        Deletes all images from a specified folder.
 
-        @param folder: The folder to delete all images from.
+        Args:
+            folder (str): The folder to delete all images from. Can be "uploaded",
+                "edited", "detected", or "all".
 
-        @returns: A dictionary with status and message about the deletion.
+        Returns:
+            Dict[str, str]: A dictionary with status and message including deletion count.
+                - "status" (str): The status of the operation.
+                - "message" (str): The message of the operation.
+        Raises:
+            HTTPException: If the folder name is invalid.
         """
         folder_map = self._get_folder_map()
 
@@ -140,15 +174,23 @@ class ImageCRUDService:
             "message": f"Deleted {deleted_count} images from {folder}"
         }
 
-    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict:
+    def move_image(self, image_id: str, source_folder: str, target_folder: str) -> Dict[str, Any]:
         """
-        Move an image from one folder to another.
+        Moves an image from one folder to another.
 
-        @param image_id: The ID of the image to move.
-        @param source_folder: The folder where the image is currently located.
-        @param target_folder: The folder to move the image to.
+        Moves both the image file and its associated metadata JSON file.
 
-        @returns: A dictionary with the metadata of the moved image.
+        Args:
+            image_id (str): The ID (filename) of the image to move.
+            source_folder (str): The folder where the image is currently located.
+            target_folder (str): The folder to move the image to.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the metadata of the moved image.
+
+        Raises:
+            HTTPException: If source/target are the same, image not found,
+                target already exists, or move operation fails.
         """
         if source_folder == target_folder:
             logger.warning("Source and target folders cannot be the same")
@@ -183,12 +225,17 @@ class ImageCRUDService:
 
     def get_image_path(self, image_id: str, folder: str) -> Path:
         """
-        Get the file path of an image by its ID in a specific folder.
+        Gets the file path of an image by its ID in a specific folder.
 
-        @param image_id: The ID of the image.
-        @param folder: The folder where the image is located.
+        Args:
+            image_id (str): The ID (filename) of the image.
+            folder (str): The folder where the image is located.
 
-        @returns: The file path of the image.
+        Returns:
+            Path: The file path of the image.
+
+        Raises:
+            HTTPException: If the image is not found.
         """
         directory = self.directory_manager.get_directory(folder)
         image_path = directory / image_id
@@ -199,14 +246,19 @@ class ImageCRUDService:
 
         return image_path
 
-    def get_image_by_id(self, image_id: str, folder: str) -> Dict:
+    def get_image_by_id(self, image_id: str, folder: str) -> Dict[str, Any]:
         """
-        Get the metadata of an image by its ID in a specific folder.
+        Gets the metadata of an image by its ID in a specific folder.
 
-        @param image_id: The ID of the image.
-        @param folder: The folder where the image is located.
+        Args:
+            image_id (str): The ID (filename) of the image.
+            folder (str): The folder where the image is located.
 
-        @returns: A dictionary with the image's metadata.
+        Returns:
+            Dict[str, Any]: A dictionary with the image's complete metadata.
+
+        Raises:
+            HTTPException: If the image is not found.
         """
         image_path = self.get_image_path(image_id, folder)
         return self.metadata_extractor.get_metadata(image_path)
@@ -217,16 +269,22 @@ class ImageCRUDService:
         limit: int = 100,
         offset: int = 0,
         subdirectory: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> List[ImageListItem]:
         """
-        List images from a specific folder.
+        Lists images from a specific folder with pagination.
 
-        @param folder: The folder to list images from.
-        @param limit: The maximum number of images to return.
-        @param offset: The number of images to skip (for pagination).
-        @param subdirectory: Optional subdirectory to search within.
+        Args:
+            folder (str): The folder to list images from. Options: "uploaded",
+                "edited", "detected", or "all".
+            limit (int): The maximum number of images to return. Defaults to 100.
+            offset (int): The number of images to skip for pagination. Defaults to 0.
+            subdirectory (Optional[str]): Optional subdirectory to search within.
 
-        @returns: A list of image metadata dictionaries.
+        Returns:
+            List[ImageListItem]: A list of ImageListItem objects containing image metadata.
+
+        Raises:
+            HTTPException: If the folder name is invalid.
         """
         folder_map = self._get_folder_map()
 
@@ -263,7 +321,6 @@ class ImageCRUDService:
         return results
 
 
-# Dependency override
 def get_image_crud_service(
     directory_manager: DirectoryManagerDep,
     metadata_extractor: ImageMetadataExtractorDep,
@@ -271,14 +328,16 @@ def get_image_crud_service(
     directories: DirectoriesDep
 ) -> ImageCRUDService:
     """
-    Dependency function to get an instance of ImageCRUDService.
+    Creates an instance of ImageCRUDService.
 
-    @param directory_manager: Handles directory-related operations.
-    @param metadata_extractor: Extracts metadata from images.
-    @param file_resolver: Helps to find files in storage.
-    @param directories: Directory mappings for different image categories.
+    Args:
+        directory_manager (DirectoryManager): Handles directory-related operations.
+        metadata_extractor (ImageMetadataExtractor): Extracts metadata from images.
+        file_resolver (FilePathResolver): Helps to find files in storage.
+        directories (Dict[str, Path]): Directory mappings for different image categories.
 
-    @returns: An instance of ImageCRUDService.
+    Returns:
+        ImageCRUDService: An instance of ImageCRUDService.
     """
     return ImageCRUDService(
         directory_manager=directory_manager,

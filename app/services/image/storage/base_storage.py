@@ -14,33 +14,40 @@ class BaseImageStorage(ABC):
         """
         Save an image and return the storage path or URL.
         
-        @param file: The image file to be saved.
-        @param folder: The optional folder where the image should be stored (default is None).
-        @param filename: The optional filename to save the image as (default is None).
-        @param format: The format of the image (e.g., "JPEG", "PNG") to save the image as (default is "JPEG").
+        Args:
+            file (UploadFile): The image file to be saved.
+            folder (Optional[str]): The optional folder where the image should be stored (default is None).
+            filename (Optional[str]): The optional filename to save the image as (default is None).
+            format (Optional[str]): The format of the image (e.g., "JPEG", "PNG") to save the image as (default is "JPEG").
         
-        @returns: The storage path or URL of the saved image.
+        Returns:
+            str: The storage path or URL of the saved image.
         """
-        pass  # This method should be implemented by subclasses
+        pass
     
     @abstractmethod
     def get_url(self, filename: str) -> str:
         """
         Return a public URL or path to the stored image.
         
-        @param filename: The name of the image file.
+        Args:
+            filename (str): The name of the image file.
         
-        @returns: The URL or path to the stored image.
+        Returns:
+            str: The URL or path to the stored image.
         """
-        pass  # This method should be implemented by subclasses
+        pass
     
     @abstractmethod
-    def delete(self, filename: str) -> bool:
+    def delete(self, directory: str, filename: str) -> bool:
         """
         Delete the image and return success status.
         
-        @param filename: The name of the image file to be deleted.
+        Args:
+            directory (str): The folder where the image is located.
+            filename (str): The name of the image file to be deleted.
         
-        @returns: True if deletion is successful, False otherwise.
+        Returns:
+            bool: True if deletion is successful, False otherwise.
         """
-        pass  # This method should be implemented by subclasses
+        pass
