@@ -6,19 +6,34 @@ The `routes` module contains all FastAPI endpoint definitions organized by funct
 
 ## Architecture
 
-Routes are organized into three main categories:
+Routes are organized into four main categories:
 
-1. **Image Management Routes** (`image_routes.py`): CRUD operations
-2. **Image Editing Routes** (`editing_routes.py`): Transformations and filters
-3. **Detection Routes** (`detection_routes.py`): Object detection operations
+1. **System Routes** (`health_routes.py`): Root and health check endpoints
+2. **Image Management Routes** (`image_routes.py`): CRUD operations
+3. **Image Editing Routes** (`editing_routes.py`): Transformations and filters
+4. **Detection Routes** (`detection_routes.py`): Object detection operations
 
 Each route file:
-- Defines a FastAPI router with a unique prefix
-- Uses dependency injection for managers
-- Applies rate limiting based on operation complexity
+- Defines a FastAPI router with appropriate prefixes (or no prefix for system routes)
+- Uses dependency injection for managers (where applicable)
+- Applies rate limiting based on operation complexity (system routes typically don't have rate limits)
 - Includes comprehensive docstrings for FastAPI's automatic documentation
 
 ## Components
+
+### `health_routes.py` - System Routes
+
+Handles system-level endpoints:
+
+- **GET `/`**: Root endpoint with welcome message
+- **GET `/health`**: Health check endpoint for monitoring and Docker health checks
+
+**Rate Limits**: None (system endpoints for monitoring)
+
+**Notes**:
+- These endpoints are used by Docker healthchecks and monitoring systems
+- No rate limiting applied as they need to be accessible for health monitoring
+- Returns JSON responses with service status information
 
 ### `image_routes.py` - Image Management
 
