@@ -37,7 +37,7 @@ app = FastAPI(
 )
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health():
     """
     Health check endpoint for monitoring and Docker health checks.
     
