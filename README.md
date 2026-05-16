@@ -77,7 +77,7 @@ docker-compose -f docker-compose.yml up --build -d
 ### Manual Setup
 
 ```bash
-git clone https://github.com/Climber1705/image-processing-api.git
+git clone https://github.com/thomas-trotter/image-processing-api.git
 cd image-processing-api
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -166,7 +166,7 @@ For detailed testing instructions, see the [Development Guide](docs/DEVELOPMENT.
 
 ## 📄 License
 
-This project is licensed under the terms of the [GNU License](https://github.com/Climber1705/image-processing-api/blob/main/LICENSE).
+This project is licensed under the terms of the [GNU License](https://github.com/thomas-trotter/image-processing-api/blob/main/LICENSE).
 
 ---
 
